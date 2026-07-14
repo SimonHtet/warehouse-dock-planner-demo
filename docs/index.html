@@ -144,7 +144,7 @@
 
 <div class="strip">
   <span><span class="dot" style="background:var(--pallet)"></span><b>ML estimates</b> — XGBoost → ONNX in your browser (onnxruntime-web, no backend)</span>
-  <span><span class="dot" style="background:var(--navy)"></span><b>Rules decide</b> — wave starts (07:00/09:00/…), single-entrance stagger, exports load first on D1–D7, exit-to-gate time by truck size</span>
+  <span><span class="dot" style="background:var(--navy)"></span><b>Rules decide</b> — 07:00 gate-open wave, then a dock is refilled the moment its truck exits; exports first on D1–D7, exit-to-gate time by truck size</span>
   <span><span class="dot" style="background:var(--hand)"></span><b>Humans override</b> — click a truck, click a new spot; illegal moves are blocked</span>
 </div>
 
@@ -153,13 +153,13 @@
     <div class="panel">
       <h2>Fleet for today</h2>
       <div class="fleet-grid">
-        <div class="fleet-row"><label>4W</label><input id="n4W" type="number" min="0" max="9" value="2"></div>
-        <div class="fleet-row"><label>18W</label><input id="n18W" type="number" min="0" max="9" value="2"></div>
-        <div class="fleet-row"><label>6W</label><input id="n6W" type="number" min="0" max="9" value="2"></div>
-        <div class="fleet-row"><label>18W trailer</label><input id="n18W-T" type="number" min="0" max="9" value="1"></div>
-        <div class="fleet-row"><label>10W</label><input id="n10W" type="number" min="0" max="9" value="3"></div>
-        <div class="fleet-row"><label>18W export</label><input id="n18W-EXP" type="number" min="0" max="9" value="2"></div>
-        <div class="fleet-row"><label>22W</label><input id="n22W" type="number" min="0" max="9" value="1"></div>
+        <div class="fleet-row"><label>4W</label><input id="n4W" type="number" min="0" max="9" value="3"></div>
+        <div class="fleet-row"><label>18W</label><input id="n18W" type="number" min="0" max="9" value="3"></div>
+        <div class="fleet-row"><label>6W</label><input id="n6W" type="number" min="0" max="9" value="3"></div>
+        <div class="fleet-row"><label>18W trailer</label><input id="n18W-T" type="number" min="0" max="9" value="2"></div>
+        <div class="fleet-row"><label>10W</label><input id="n10W" type="number" min="0" max="9" value="4"></div>
+        <div class="fleet-row"><label>18W export</label><input id="n18W-EXP" type="number" min="0" max="9" value="3"></div>
+        <div class="fleet-row"><label>22W</label><input id="n22W" type="number" min="0" max="9" value="2"></div>
       </div>
       <button class="btn" id="pullBtn">Pull orders from SAP · plan (R)</button>
       <div class="sap-status" id="sapStatus"></div>
@@ -180,7 +180,7 @@
     <div class="panel">
       <h2>Order queue — predicted duration (ONNX)</h2>
       <table class="queue">
-        <thead><tr><th>Order</th><th>Wave</th><th class="num">Ctn</th><th class="num">SKU</th><th>M</th><th class="num">Est</th></tr></thead>
+        <thead><tr><th>Order</th><th>Start</th><th class="num">Ctn</th><th class="num">SKU</th><th>M</th><th class="num">Est</th></tr></thead>
         <tbody id="queueBody"></tbody>
       </table>
     </div>
@@ -234,8 +234,8 @@
 "use strict";
 // ---------- constants ----------
 const DAY_START = 6 * 60, DAY_END = 20 * 60, SPAN = DAY_END - DAY_START;
-const ANCHORS = [420, 540, 660, 780, 900, 1020];   // wave starts: 07:00, 09:00, … 17:00
-const STAGGER_MIN = 4;                             // one entrance: trucks enter a wave 4 min apart
+const OPS_START = 7 * 60;                          // docks open: first wave at 07:00
+const ENTRY_GAP = 4;                               // one entrance: trucks enter 4 min apart
 const DOCKS = Array.from({ length: 16 }, (_, i) => "D" + (i + 1));
 const EXPORT_DOCKS = 7;                            // D1–D7 = export-capable pool
 const PALLET_CAP = { "4W": 3, "6W": 6, "10W": 12, "18W": 20, "18W-T": 26, "18W-EXP": 20, "22W": 32 };
@@ -315,8 +315,11 @@ function pullFromSap() {
 
 // ---------- the rules ----------
 // ML estimated each order's duration; everything below is auditable logic:
-//   - trucks start in WAVES at 07:00/09:00/…, staggered 4 min apart (one entrance)
-//   - exports load in the earliest wave, exclusively on D1–D7
+//   - docks open 07:00: everyone available starts in the gate-open wave,
+//     entering 4 min apart (one entrance)
+//   - after that it is EVENT-DRIVEN: the moment a truck clears its exit,
+//     the next queued truck docks immediately — no waiting for a round
+//   - exports load first, exclusively on D1–D7
 //   - a dock stays occupied through loading + exit-to-gate (5–15 min by truck size)
 //   - trailers need 2 adjacent docks in D8–D16 (never straddling the D7/D8 zone line)
 //   - manual pins are honored first and survive re-plans
@@ -329,47 +332,57 @@ async function plan() {
   orders.forEach((o, i) => { o.est = preds[i]; o.dur = Math.max(15, preds[i]); o.exit = EXIT_MIN[o.truck_type]; });
 
   const busy = Object.fromEntries(DOCKS.map(d => [d, []]));
+  const free = Object.fromEntries(DOCKS.map(d => [d, OPS_START]));  // earliest next docking per dock
+  const entries = [];                                               // gate entry times (one entrance)
   const placed = [];
   const occupy = (o, docks, start) => {
     const exitEnd = start + o.dur + o.exit;
-    docks.forEach(d => busy[d].push([start, exitEnd]));
+    docks.forEach(d => { busy[d].push([start, exitEnd]); free[d] = Math.max(free[d], exitEnd); });
+    entries.push(start);
     placed.push(Object.assign(o, { start, finish: start + o.dur, exitEnd, docks }));
+  };
+  const entrySlot = t => {          // shift until no other truck enters within ENTRY_GAP
+    let moved = true;
+    while (moved) {
+      moved = false;
+      for (const e of entries) if (Math.abs(t - e) < ENTRY_GAP) { t = e + ENTRY_GAP; moved = true; }
+    }
+    return t;
   };
 
   for (const o of orders.filter(x => x.pin)) {          // pins first
     if (o.pin.start + o.dur + o.exit <= DAY_END &&
         fits(busy, o.pin.docks, o.pin.start, o.pin.start + o.dur + o.exit))
       occupy(o, o.pin.docks, o.pin.start);
-    else o.pin = null;                                  // stale pin: fall back to waves
+    else o.pin = null;                                  // stale pin: fall back to the queue
   }
 
   let rest = orders.filter(o => !placed.includes(o));
   rest.sort((a, b) => (b.export - a.export) || (a.arrival - b.arrival) || a.id.localeCompare(b.id));
 
-  for (const anchor of ANCHORS) {
-    let entry = 0;
-    for (const o of [...rest]) {
-      if (o.arrival > anchor) continue;
-      const start = anchor + STAGGER_MIN * entry;
-      const end = start + o.dur + o.exit;
-      if (end > DAY_END) continue;
-      let pick = null;
-      if (o.trailer) {
-        for (let j = EXPORT_DOCKS; j < DOCKS.length - 1 && !pick; j++)
-          if (fits(busy, [DOCKS[j], DOCKS[j + 1]], start, end)) pick = [DOCKS[j], DOCKS[j + 1]];
-      } else if (o.export) {
-        for (let j = 0; j < EXPORT_DOCKS && !pick; j++)
-          if (fits(busy, [DOCKS[j]], start, end)) pick = [DOCKS[j]];
-      } else {
-        for (let j = EXPORT_DOCKS; j < DOCKS.length && !pick; j++)
-          if (fits(busy, [DOCKS[j]], start, end)) pick = [DOCKS[j]];
-        for (let j = 0; j < EXPORT_DOCKS && !pick; j++)  // export docks usable when free
-          if (fits(busy, [DOCKS[j]], start, end)) pick = [DOCKS[j]];
-      }
-      if (pick) { occupy(o, pick, start); rest.splice(rest.indexOf(o), 1); entry++; }
+  const unplanned = [];
+  for (const o of rest) {
+    let best = null;
+    const consider = (docks, penalty) => {
+      const t = Math.max(o.arrival, OPS_START, ...docks.map(d => free[d]));
+      if (!best || t + penalty < best.score) best = { docks, t, score: t + penalty };
+    };
+    if (o.trailer) {
+      for (let j = EXPORT_DOCKS; j < DOCKS.length - 1; j++) consider([DOCKS[j], DOCKS[j + 1]], 0);
+    } else if (o.export) {
+      for (let j = 0; j < EXPORT_DOCKS; j++) consider([DOCKS[j]], 0);
+    } else {
+      for (let j = 0; j < DOCKS.length; j++)            // export docks usable when free (soft penalty)
+        consider([DOCKS[j]], j < EXPORT_DOCKS ? 10 : 0);
     }
+    const start = entrySlot(best.t);
+    if (start + o.dur + o.exit > DAY_END || !fits(busy, best.docks, start, start + o.dur + o.exit)) {
+      unplanned.push(o);
+      continue;
+    }
+    occupy(o, best.docks, start);
   }
-  placedNow = placed; unplannedNow = rest;
+  placedNow = placed; unplannedNow = unplanned;
   render();
 }
 
@@ -427,19 +440,11 @@ function capacityBins() {
   return bins;
 }
 
-function waveOf(p) {
-  if (!p.start) return "–";
-  if (p.pin) return "📌";
-  let w = 1;
-  for (const a of ANCHORS) { if (p.start >= a && p.start < a + 120) return "W" + w; w++; }
-  return "–";
-}
-
 function render() {
   const all = [...placedNow].sort((a, b) => a.start - b.start);
   document.getElementById("queueBody").innerHTML = all.map(p => `
     <tr><td><span class="swatch" style="background:var(--${p.arrange_method})"></span>${p.id.slice(3)} ${p.truck_type}${p.export ? '<span class="exp-chip">EXP</span>' : ""}</td>
-    <td>${waveOf(p)} ${hhmm(p.start)}</td><td class="num">${p.carton_count}</td><td class="num">${p.sku_count}</td>
+    <td>${p.pin ? "📌" : ""}${hhmm(p.start)}</td><td class="num">${p.carton_count}</td><td class="num">${p.sku_count}</td>
     <td>${p.arrange_method === "hand" ? "H" : "P"}</td>
     <td class="num pred">${p.est.toFixed(0)}</td></tr>`).join("")
     + unplannedNow.map(o => `

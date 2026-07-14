@@ -18,8 +18,9 @@ A dock planner has two very different sub-problems, and they deserve different t
 | *Which dock, which wave?* | Assignment under constraints — must be auditable, explainable, and overridable by a human planner | **Rules** — waves, zones, exits, pins |
 
 **ML estimates, rules decide.** The ONNX model predicts each order's loading duration; everything
-else is auditable logic: trucks start in **waves** (07:00 / 09:00 / …) staggered 4 min apart because
-there is one gate; **exports load first**, exclusively on docks D1–D7; a dock stays occupied through
+else is auditable logic: docks open with a **07:00 gate-open wave** (trucks enter 4 min apart —
+one gate), and from then on assignment is **event-driven**: the moment a truck clears its exit, the
+next queued truck docks immediately; **exports load first**, exclusively on docks D1–D7; a dock stays occupied through
 loading **plus exit-to-gate time** (5 min for a 4W up to 15 min for a 22W or trailer); trailers span
 2 adjacent docks. An hourly strip shows **planned cartons vs the sortation-line capacity**. And the
 human stays in charge: click a truck, click a new spot — legal moves get **📌 pinned** (surviving
