@@ -69,7 +69,7 @@
   .exp-chip { font-size: 9px; font-weight: 700; color: var(--navy); border: 1px solid var(--navy);
     border-radius: 2px; padding: 0 3px; margin-left: 4px; letter-spacing: .3px; }
 
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 10px; }
   .kpi { background: var(--surface); border: 1px solid var(--ring); border-radius: 4px; padding: 8px 12px; }
   .kpi .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .kpi .l { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-top: 1px; }
@@ -93,16 +93,18 @@
 
   .tl-head { position: relative; height: 16px; margin-left: 62px; }
   .tl-head span { position: absolute; transform: translateX(-50%); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .dock-row { display: flex; align-items: center; height: 27px; border-top: 1px solid var(--grid); }
+  .dock-row { display: flex; align-items: center; height: 30px; border-top: 1px solid var(--grid); }
+  .dock-row:nth-child(even) .lane { background: rgba(11,11,11,0.016); }
   .dock-row.zone-end { border-bottom: 2px solid var(--baseline); }
   .dock-label { width: 62px; flex: none; font-weight: 600; color: var(--ink-2); font-size: 11px; }
   .dock-label .z { font-size: 8.5px; font-weight: 700; color: var(--navy); border: 1px solid var(--navy);
     border-radius: 2px; padding: 0 2px; margin-left: 4px; letter-spacing: .3px; vertical-align: 1px; }
   .lane { position: relative; flex: 1; height: 100%; }
-  .lane.movable { cursor: crosshair; background: rgba(42,120,214,0.045); }
-  .gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); }
-  .blk { position: absolute; top: 3px; height: 21px; border-radius: 3px; display: flex; align-items: center;
-    padding: 0 5px; overflow: hidden; white-space: nowrap; font-size: 10px; font-weight: 600; color: var(--ink);
+  .lane.movable { cursor: crosshair; background: rgba(42,120,214,0.045) !important; }
+  .gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); opacity: .45; }
+  .gridline.major { opacity: 1; }
+  .blk { position: absolute; top: 3px; height: 24px; border-radius: 4px; display: flex; align-items: center;
+    padding: 0 6px; overflow: hidden; white-space: nowrap; font-size: 10px; font-weight: 600; color: var(--ink);
     border: 1px solid; cursor: pointer; }
   .blk .mins { font-weight: 400; color: var(--ink-2); margin-left: 4px; }
   .blk.hand   { background: var(--hand-tint);   border-color: var(--hand);   box-shadow: inset 3px 0 0 var(--hand); }
@@ -111,7 +113,21 @@
   .blk.ghost { border-style: dashed; opacity: .75; font-weight: 400; }
   .blk.sel { outline: 2px dashed var(--navy); outline-offset: 2px; }
   .blk:hover { outline: 2px solid var(--navy); outline-offset: 1px; }
-  .exitseg { position: absolute; top: 8px; height: 11px; background: #3a3935; border-radius: 0 2px 2px 0; opacity: .8; pointer-events: none; }
+  .exitseg { position: absolute; top: 3px; height: 24px; background: #3a3935; opacity: .5;
+    border-radius: 0 4px 4px 0; pointer-events: none; }
+
+  .yard { margin-top: 10px; border: 1px dashed var(--baseline); border-radius: 4px; padding: 6px 9px;
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-height: 36px; background: rgba(11,11,11,0.02); }
+  .yard.droptarget { outline: 2px dashed var(--navy); outline-offset: 1px; cursor: copy; }
+  .yard .y-label { font-size: 10px; font-weight: 700; letter-spacing: .8px; color: var(--muted);
+    text-transform: uppercase; margin-right: 4px; }
+  .yard .y-empty { font-size: 10.5px; color: var(--muted); }
+  .yard-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 3px;
+    border: 1px solid; font-size: 10.5px; font-weight: 600; cursor: pointer; }
+  .yard-chip.hand   { background: var(--hand-tint);   border-color: var(--hand); }
+  .yard-chip.pallet { background: var(--pallet-tint); border-color: var(--pallet); }
+  .yard-chip.sel { outline: 2px dashed var(--navy); outline-offset: 2px; }
+  .yard-chip .mins { font-weight: 400; color: var(--ink-2); }
 
   .legend { display: flex; gap: 14px; margin-top: 8px; font-size: 11px; color: var(--ink-2); flex-wrap: wrap; }
   .legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; }
@@ -189,6 +205,7 @@
   <div>
     <div class="kpis">
       <div class="kpi"><div class="v" id="kTrucks">–</div><div class="l">Trucks planned</div></div>
+      <div class="kpi"><div class="v" id="kCartons">–</div><div class="l">Cartons planned</div></div>
       <div class="kpi"><div class="v" id="kMakespan">–</div><div class="l">Last gate-out</div></div>
       <div class="kpi"><div class="v" id="kAvg">–</div><div class="l">Avg predicted min</div></div>
       <div class="kpi"><div class="v" id="kUtil">–</div><div class="l">Dock utilization</div></div>
@@ -206,6 +223,7 @@
       <div class="cap-strip" id="capStrip"></div>
       <div class="tl-head" id="tlHead"></div>
       <div class="tl" id="tl"></div>
+      <div class="yard" id="yard"></div>
       <div class="legend">
         <span><span class="dot" style="background:var(--hand)"></span>Hand-arrange</span>
         <span><span class="dot" style="background:var(--pallet)"></span>Pallet</span>
@@ -213,6 +231,7 @@
         <span><span class="exit-dot"></span>exit to gate</span>
         <span>⇕ trailer spans 2 docks</span>
         <span>📌 pinned by planner</span>
+        <span>📥 yard: park a truck below, then place it back</span>
         <span style="margin-left:auto">06:00 – 20:00 · 16 docks</span>
       </div>
     </div>
@@ -357,7 +376,7 @@ async function plan() {
     else o.pin = null;                                  // stale pin: fall back to the queue
   }
 
-  let rest = orders.filter(o => !placed.includes(o));
+  let rest = orders.filter(o => !placed.includes(o) && !o.staged);   // staged trucks wait in the yard
   rest.sort((a, b) => (b.export - a.export) || (a.arrival - b.arrival) || a.id.localeCompare(b.id));
 
   const unplanned = [];
@@ -412,6 +431,7 @@ function tryMove(o, dockIdx, t) {
   const v = validateMove(o, dockIdx, t);
   if (!v.ok) { toast("🚫 Blocked — " + v.reason, true); return false; }
   o.pin = { docks: v.docks, start: t };
+  o.staged = false;
   Object.assign(o, { start: t, finish: t + o.dur, exitEnd: t + o.dur + o.exit, docks: v.docks });
   if (!placedNow.includes(o)) { placedNow.push(o); unplannedNow = unplannedNow.filter(u => u.id !== o.id); }
   toast(`📌 ${o.id} pinned to ${v.docks.join("+")} at ${hhmm(t)}`);
@@ -419,10 +439,18 @@ function tryMove(o, dockIdx, t) {
   return true;
 }
 
+function stageOrder(o) {          // park in the yard: frees its dock until placed back
+  o.pin = null;
+  o.staged = true;
+  placedNow = placedNow.filter(p => p.id !== o.id);
+  toast(`📥 ${o.id} moved to the yard — its dock is free`);
+  setMoving(null);
+}
+
 function setMoving(o) {
   moving = o;
   document.getElementById("moveHint").textContent =
-    o ? `Moving ${o.id} — click a dock lane at the target time · Esc to cancel` : "";
+    o ? `Moving ${o.id} — click a dock lane at the target time${placedNow.some(p => p.id === o.id) ? ", or the yard to park it" : ""} · Esc to cancel` : "";
   render();
 }
 
@@ -442,24 +470,38 @@ function capacityBins() {
 
 function render() {
   const all = [...placedNow].sort((a, b) => a.start - b.start);
+  const yard = orders.filter(o => !placedNow.some(p => p.id === o.id));
   document.getElementById("queueBody").innerHTML = all.map(p => `
     <tr><td><span class="swatch" style="background:var(--${p.arrange_method})"></span>${p.id.slice(3)} ${p.truck_type}${p.export ? '<span class="exp-chip">EXP</span>' : ""}</td>
     <td>${p.pin ? "📌" : ""}${hhmm(p.start)}</td><td class="num">${p.carton_count}</td><td class="num">${p.sku_count}</td>
     <td>${p.arrange_method === "hand" ? "H" : "P"}</td>
     <td class="num pred">${p.est.toFixed(0)}</td></tr>`).join("")
-    + unplannedNow.map(o => `
+    + yard.map(o => `
     <tr class="unplanned"><td>${o.id.slice(3)} ${o.truck_type}${o.export ? '<span class="exp-chip">EXP</span>' : ""}</td>
-    <td>no slot</td><td class="num">${o.carton_count}</td><td class="num">${o.sku_count}</td>
+    <td>${o.staged ? "📥 yard" : "no slot"}</td><td class="num">${o.carton_count}</td><td class="num">${o.sku_count}</td>
     <td>${o.arrange_method === "hand" ? "H" : "P"}</td><td class="num pred">${o.est.toFixed(0)}</td></tr>`).join("");
 
   const makespan = placedNow.length ? Math.max(...placedNow.map(p => p.exitEnd)) : 0;
   const booked = placedNow.reduce((s, p) => s + (p.exitEnd - p.start) * p.docks.length, 0);
-  document.getElementById("kTrucks").textContent = placedNow.length + (unplannedNow.length ? " / " + orders.length : "");
+  const cartons = placedNow.reduce((s, p) => s + p.carton_count, 0);
+  const cartonsAll = orders.reduce((s, o) => s + o.carton_count, 0);
+  document.getElementById("kTrucks").textContent = placedNow.length + (yard.length ? " / " + orders.length : "");
+  document.getElementById("kCartons").textContent = cartons.toLocaleString()
+    + (cartons !== cartonsAll ? " / " + cartonsAll.toLocaleString() : "");
   document.getElementById("kMakespan").textContent = placedNow.length ? hhmm(makespan) : "–";
   document.getElementById("kAvg").textContent = placedNow.length
     ? (placedNow.reduce((s, p) => s + p.dur, 0) / placedNow.length).toFixed(0) : "–";
   document.getElementById("kUtil").textContent = placedNow.length
     ? Math.round(100 * booked / (DOCKS.length * SPAN)) + "%" : "–";
+
+  // yard / staging strip
+  const yardEl = document.getElementById("yard");
+  yardEl.className = "yard" + (moving && placedNow.some(p => p.id === moving.id) ? " droptarget" : "");
+  yardEl.innerHTML = `<span class="y-label">📥 Yard / staging</span>` + (yard.length ? yard.map(o => `
+    <span class="yard-chip ${o.arrange_method}${moving && moving.id === o.id ? " sel" : ""}" data-oid="${o.id}">
+      ${o.id.slice(3)} ${o.truck_type}${o.export ? '<span class="exp-chip">EXP</span>' : ""}
+      <span class="mins">${o.est ? o.est.toFixed(0) + "m" : ""}</span></span>`).join("")
+    : `<span class="y-empty">empty — while moving a truck, click here to park it; click a parked truck to place it back</span>`);
 
   // capacity strip — cap = sortation rate
   const cap = warehouseState().sortation_rate;
@@ -485,7 +527,7 @@ function render() {
     <div class="dock-row${i === EXPORT_DOCKS - 1 ? " zone-end" : ""}">
       <div class="dock-label">${d}${i < EXPORT_DOCKS ? '<span class="z">EXP</span>' : ""}</div>
       <div class="lane${moving ? " movable" : ""}" data-idx="${i}">
-        ${Array.from({ length: 15 }, (_, g) => `<div class="gridline" style="left:${(g * 60) / SPAN * 100}%"></div>`).join("")}
+        ${Array.from({ length: 15 }, (_, g) => `<div class="gridline${(6 + g) % 2 === 0 ? " major" : ""}" style="left:${(g * 60) / SPAN * 100}%"></div>`).join("")}
       </div></div>`).join("");
 
   for (const p of placedNow) {
@@ -508,6 +550,12 @@ function render() {
       lane.appendChild(ex);
     });
   }
+
+  // declutter: drop labels that would clip inside narrow blocks (tooltip still has everything)
+  tl.querySelectorAll(".blk").forEach(b => {
+    if (b.clientWidth < 52) b.querySelector(".mins")?.remove();
+    if (b.clientWidth < 30) b.textContent = "";
+  });
 }
 
 // ---------- tooltip ----------
@@ -557,6 +605,16 @@ document.getElementById("tl").addEventListener("click", e => {
     const t = DAY_START + Math.round(((e.clientX - r.left) / r.width * SPAN) / 5) * 5;
     if (tryMove(moving, Number(lane.dataset.idx), t)) setMoving(null);
   }
+});
+
+document.getElementById("yard").addEventListener("click", e => {
+  const chip = e.target.closest(".yard-chip");
+  if (chip) {                                    // pick a parked truck to place back
+    const o = orders.find(x => x.id === chip.dataset.oid);
+    setMoving(moving && moving.id === o.id ? null : o);
+    return;
+  }
+  if (moving && placedNow.some(p => p.id === moving.id)) stageOrder(moving);   // park it
 });
 
 async function pullAndPlan(newVariant) {
@@ -620,9 +678,15 @@ document.addEventListener("keydown", e => {
       const dom = placedNow.find(p => !p.export && !p.trailer);
       const r1 = validateMove(exp, 9, exp.start);            // export → D10: must block
       const r2 = validateMove(dom, 15, 17 * 60 + 30);        // domestic → D16 @17:30: should pass
+      const small = placedNow.find(p => ["4W", "6W"].includes(p.truck_type));
+      const n0 = placedNow.length;
+      stageOrder(small);                                     // yard round-trip
+      const stagedOk = placedNow.length === n0 - 1 && small.staged;
+      const backOk = tryMove(small, 15, 16 * 60);            // place back: D16 @16:00
       document.getElementById("sapStatus").textContent =
-        `selftest — export→D10: ${r1.ok ? "ALLOWED (BUG!)" : "blocked ✓ (" + r1.reason + ")"} · ` +
-        `domestic→D16@17:30: ${r2.ok ? "ok ✓" : "blocked (" + r2.reason + ")"}`;
+        `selftest — export→D10: ${r1.ok ? "ALLOWED (BUG!)" : "blocked ✓"} · ` +
+        `domestic→D16@17:30: ${r2.ok ? "ok ✓" : "blocked (" + r2.reason + ")"} · ` +
+        `yard: ${stagedOk ? "staged ✓" : "stage FAILED"} → ${backOk ? "placed back ✓" : "place-back FAILED"}`;
     }
   } catch (err) {
     badge.textContent = "model failed: " + err.message;

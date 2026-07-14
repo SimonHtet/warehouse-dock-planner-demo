@@ -24,7 +24,9 @@ next queued truck docks immediately; **exports load first**, exclusively on dock
 loading **plus exit-to-gate time** (5 min for a 4W up to 15 min for a 22W or trailer); trailers span
 2 adjacent docks. An hourly strip shows **planned cartons vs the sortation-line capacity**. And the
 human stays in charge: click a truck, click a new spot — legal moves get **📌 pinned** (surviving
-re-plans), illegal ones are **blocked** with the exact rule violated.
+re-plans), illegal ones are **blocked** with the exact rule violated. When the board is packed, a
+**📥 yard/staging strip** lets the planner park a truck out of the plan (freeing its dock) and
+place it back later.
 
 ## Why ONNX
 
