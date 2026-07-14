@@ -1,43 +1,60 @@
 """Synthetic dock-event generator.
 
-Realistic dock service durations with nonlinearity + interactions baked in
-(big frozen loads are disproportionately slow, morning congestion bump) —
-which is exactly why the tree models should beat the linear baseline.
+Duration structure (all synthetic, tuned for plausibility not realism):
+- hand-arrange: cartons stacked individually — cost scales with cartons and
+  worsens when the sortation line runs slow; the SLOW path
+- pallet: forklift cycles + ASRS retrieval — cost scales with pallets,
+  eased by more forklifts and a faster ASRS picking rate
+- SKU count adds changeover/sortation overhead (worse for hand-arrange)
+- before 09:00 the warehouse is still ramping up; 12:00–13:00 lunch runs
+  at half rate; trailers pay a two-dock repositioning premium
 
-All data is synthetic. No real warehouse, customer, or operational data.
+Nonlinearity + interactions are deliberate — they are why the tree models
+beat the linear baseline. No real warehouse data anywhere.
 """
 import numpy as np
 import pandas as pd
 
-from config import DOCKS, N_EVENTS, PRODUCT_CATEGORIES, SEED, TRUCK_TYPES
+from config import ARRANGE_METHODS, N_EVENTS, PALLET_CAP, SEED, TRUCK_TYPES
 
-SIZE_FACTOR = {"4W": 1.0, "6W": 1.5, "10W": 2.2}
-PRODUCT_FACTOR = {"ambient": 1.0, "chilled": 1.3, "frozen": 1.6}
+CARTONS_PER_PALLET = (90, 120)
 
 
 def make_synthetic(n: int = N_EVENTS, seed: int = SEED) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
-    truck_size = rng.choice(TRUCK_TYPES, size=n, p=[0.40, 0.35, 0.25])
-    cartons = rng.integers(20, 600, size=n)
-    product = rng.choice(PRODUCT_CATEGORIES, size=n, p=[0.30, 0.50, 0.20])
-    dock = rng.choice(DOCKS, size=n)
-    hour = rng.integers(6, 20, size=n)
-    dow = rng.integers(0, 7, size=n)
+    truck = rng.choice(TRUCK_TYPES, size=n, p=[0.14, 0.16, 0.22, 0.18, 0.08, 0.12, 0.10])
+    cap = pd.Series(truck).map(PALLET_CAP).to_numpy()
 
-    size_f = pd.Series(truck_size).map(SIZE_FACTOR).to_numpy()
-    prod_f = pd.Series(product).map(PRODUCT_FACTOR).to_numpy()
+    pallets = np.maximum(1, np.round(cap * rng.uniform(0.6, 1.0, size=n)))
+    cartons = np.round(pallets * rng.integers(*CARTONS_PER_PALLET, size=n)).astype(int)
+    skus = 1 + rng.binomial(24, 0.25, size=n)                      # skewed low, 1–25
+    method = rng.choice(ARRANGE_METHODS, size=n, p=[0.3, 0.7])
+    hour = rng.integers(6, 18, size=n)
+    asrs = rng.integers(60, 131, size=n)                           # pallets/hour
+    forklifts = rng.integers(1, 5, size=n)
+    sortation = rng.integers(800, 2001, size=n)                    # cartons/hour
 
-    base = 8 + 0.05 * cartons * size_f * prod_f            # interaction term
-    rush = np.where((hour >= 8) & (hour <= 10), 6.0, 0.0)  # morning congestion
-    noise = rng.normal(0, 5, size=n)
-    duration = np.clip(base + rush + noise, 5, None)
+    hand = method == "hand"
+    load = np.where(
+        hand,
+        cartons * 0.035 * (1200 / sortation) ** 0.8,               # hand: carton-by-carton
+        pallets * (60 / asrs) + pallets * 1.8 / np.sqrt(forklifts) # pallet: ASRS + forklift
+    )
+    sku_overhead = skus * np.where(hand, 1.5, 0.8)
+    ramp_up = np.where(hour < 9, 0.15 * load + 5, 0)               # pre-9am half-awake warehouse
+    lunch = np.where(hour == 12, 20, 0)                            # 12:00–13:00 half rate
+    trailer = np.where(truck == "18W-T", 12, 0)                    # two-dock repositioning
+
+    duration = 12 + load + sku_overhead + ramp_up + lunch + trailer + rng.normal(0, 6, size=n)
 
     return pd.DataFrame({
-        "truck_size": truck_size,
+        "truck_type": truck,
+        "arrange_method": method,
         "carton_count": cartons,
-        "product_category": product,
-        "dock": dock,
+        "sku_count": skus,
         "hour_of_day": hour,
-        "day_of_week": dow,
-        "duration_min": duration.round(1),
+        "asrs_rate": asrs,
+        "forklift_count": forklifts,
+        "sortation_rate": sortation,
+        "duration_min": np.clip(duration, 15, None).round(1),
     })

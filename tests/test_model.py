@@ -26,9 +26,16 @@ def test_synth_is_deterministic(df):
 
 
 def test_synth_shape_and_ranges(df):
-    assert len(df) == 3000
-    assert (df["duration_min"] >= 5).all()
-    assert set(df["truck_size"]) == {"4W", "6W", "10W"}
+    from config import N_EVENTS, TRUCK_TYPES
+    assert len(df) == N_EVENTS
+    assert (df["duration_min"] >= 15).all()
+    assert set(df["truck_type"]) == set(TRUCK_TYPES)
+
+
+def test_hand_arrange_is_slower(df):
+    """Domain truth from Simon: เรียงมือ (hand-arrange) is the slow path."""
+    by_method = df.groupby("arrange_method")["duration_min"].mean()
+    assert by_method["hand"] > by_method["pallet"]
 
 
 def test_tree_models_beat_linear(fitted):

@@ -40,9 +40,9 @@ earns its accuracy (held-out MAE, in minutes):
 
 ```
        model  MAE  RMSE
-     XGBoost 4.18  5.26
-RandomForest 4.43  5.59
-      Linear 6.03  7.76
+     XGBoost 5.54  6.98
+RandomForest 6.46  8.31
+      Linear 8.61 11.29
 ```
 
 The synthetic generator bakes in nonlinearity and interactions (big frozen loads are

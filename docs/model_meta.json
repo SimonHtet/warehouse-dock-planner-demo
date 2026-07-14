@@ -2,70 +2,65 @@
   "winner": "XGBoost",
   "cat_cols": [
     {
-      "name": "truck_size",
+      "name": "truck_type",
       "categories": [
         "10W",
+        "18W",
+        "18W-EXP",
+        "18W-T",
+        "22W",
         "4W",
         "6W"
       ]
     },
     {
-      "name": "product_category",
+      "name": "arrange_method",
       "categories": [
-        "ambient",
-        "chilled",
-        "frozen"
-      ]
-    },
-    {
-      "name": "dock",
-      "categories": [
-        "D1",
-        "D2",
-        "D3",
-        "D4",
-        "D5",
-        "D6",
-        "D7",
-        "D8"
+        "hand",
+        "pallet"
       ]
     }
   ],
   "num_cols": [
     "carton_count",
+    "sku_count",
     "hour_of_day",
-    "day_of_week"
+    "asrs_rate",
+    "forklift_count",
+    "sortation_rate"
   ],
-  "n_features": 17,
+  "n_features": 15,
   "metrics": [
     {
       "model": "XGBoost",
-      "MAE": 4.175,
-      "RMSE": 5.255
+      "MAE": 5.539,
+      "RMSE": 6.977
     },
     {
       "model": "RandomForest",
-      "MAE": 4.434,
-      "RMSE": 5.59
+      "MAE": 6.46,
+      "RMSE": 8.309
     },
     {
       "model": "Linear",
-      "MAE": 6.034,
-      "RMSE": 7.756
+      "MAE": 8.614,
+      "RMSE": 11.29
     }
   ],
   "parity": {
     "input": {
-      "truck_size": "10W",
-      "product_category": "frozen",
-      "dock": "D3",
-      "carton_count": 400,
-      "hour_of_day": 9,
-      "day_of_week": 2
+      "truck_type": "22W",
+      "arrange_method": "hand",
+      "carton_count": 3300,
+      "sku_count": 12,
+      "hour_of_day": 8,
+      "asrs_rate": 100,
+      "forklift_count": 2,
+      "sortation_rate": 1400
     },
-    "expected_min": 81.26
+    "expected_min": 136.21
   },
   "trained_at": "2026-07-14",
   "seed": 42,
-  "n_events": 3000
+  "n_events": 4000
 }
