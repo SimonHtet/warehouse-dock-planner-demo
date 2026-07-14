@@ -1,0 +1,71 @@
+{
+  "winner": "XGBoost",
+  "cat_cols": [
+    {
+      "name": "truck_size",
+      "categories": [
+        "10W",
+        "4W",
+        "6W"
+      ]
+    },
+    {
+      "name": "product_category",
+      "categories": [
+        "ambient",
+        "chilled",
+        "frozen"
+      ]
+    },
+    {
+      "name": "dock",
+      "categories": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "D7",
+        "D8"
+      ]
+    }
+  ],
+  "num_cols": [
+    "carton_count",
+    "hour_of_day",
+    "day_of_week"
+  ],
+  "n_features": 17,
+  "metrics": [
+    {
+      "model": "XGBoost",
+      "MAE": 4.175,
+      "RMSE": 5.255
+    },
+    {
+      "model": "RandomForest",
+      "MAE": 4.434,
+      "RMSE": 5.59
+    },
+    {
+      "model": "Linear",
+      "MAE": 6.034,
+      "RMSE": 7.756
+    }
+  ],
+  "parity": {
+    "input": {
+      "truck_size": "10W",
+      "product_category": "frozen",
+      "dock": "D3",
+      "carton_count": 400,
+      "hour_of_day": 9,
+      "day_of_week": 2
+    },
+    "expected_min": 81.26
+  },
+  "trained_at": "2026-07-14",
+  "seed": 42,
+  "n_events": 3000
+}
