@@ -14,7 +14,7 @@ A dock planner has two very different sub-problems, and they deserve different t
 
 | Sub-problem | Nature | Tool |
 |---|---|---|
-| *How long will this truck occupy a dock?* | Multi-factor pattern with interactions (truck size × cartons × product × time-of-day congestion) | **ML** — learned regression |
+| *How long will this truck occupy a dock?* | Multi-factor pattern with interactions (truck class × cartons × SKUs × arrange method × time-of-day × ASRS/forklift/sortation state) | **ML** — learned regression |
 | *Which dock should it go to?* | Assignment under constraints — must be auditable, explainable, and overridable by a human planner | **Rules** — deterministic earliest-finish |
 
 **ML estimates, rules decide.** The demo makes the loop literal: for each truck, the ONNX model
@@ -45,9 +45,10 @@ RandomForest 6.46  8.31
       Linear 8.61 11.29
 ```
 
-The synthetic generator bakes in nonlinearity and interactions (big frozen loads are
-disproportionately slow, morning congestion bump) — which is exactly why the tree models win,
-and the whole "why not just linear regression" story in one table.
+The synthetic generator bakes in nonlinearity and interactions (hand-arrange cost scales with
+cartons and worsens on a slow sortation line, pallet cost rides the ASRS rate and forklift count,
+pre-9am ramp-up, lunch-break slowdown) — which is exactly why the tree models win, and the whole
+"why not just linear regression" story in one table.
 
 ## Run it
 
