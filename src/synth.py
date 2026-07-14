@@ -44,8 +44,10 @@ def make_synthetic(n: int = N_EVENTS, seed: int = SEED) -> pd.DataFrame:
     ramp_up = np.where(hour < 9, 0.15 * load + 5, 0)               # pre-9am half-awake warehouse
     lunch = np.where(hour == 12, 20, 0)                            # 12:00–13:00 half rate
     trailer = np.where(truck == "18W-T", 12, 0)                    # two-dock repositioning
+    export = np.where(truck == "18W-EXP",                          # customs docs + container seal
+                      rng.uniform(40, 70, size=n), 0)
 
-    duration = 12 + load + sku_overhead + ramp_up + lunch + trailer + rng.normal(0, 6, size=n)
+    duration = 12 + load + sku_overhead + ramp_up + lunch + trailer + export + rng.normal(0, 6, size=n)
 
     return pd.DataFrame({
         "truck_type": truck,

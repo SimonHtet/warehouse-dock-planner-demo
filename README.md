@@ -15,11 +15,15 @@ A dock planner has two very different sub-problems, and they deserve different t
 | Sub-problem | Nature | Tool |
 |---|---|---|
 | *How long will this truck occupy a dock?* | Multi-factor pattern with interactions (truck class × cartons × SKUs × arrange method × time-of-day × ASRS/forklift/sortation state) | **ML** — learned regression |
-| *Which dock should it go to?* | Assignment under constraints — must be auditable, explainable, and overridable by a human planner | **Rules** — deterministic earliest-finish |
+| *Which dock, which wave?* | Assignment under constraints — must be auditable, explainable, and overridable by a human planner | **Rules** — waves, zones, exits, pins |
 
-**ML estimates, rules decide.** The demo makes the loop literal: for each truck, the ONNX model
-predicts a duration *per candidate dock*, and the rule engine picks the dock with the earliest finish.
-The prediction is learned; the decision is a one-line rule anyone can audit.
+**ML estimates, rules decide.** The ONNX model predicts each order's loading duration; everything
+else is auditable logic: trucks start in **waves** (07:00 / 09:00 / …) staggered 4 min apart because
+there is one gate; **exports load first**, exclusively on docks D1–D7; a dock stays occupied through
+loading **plus exit-to-gate time** (5 min for a 4W up to 15 min for a 22W or trailer); trailers span
+2 adjacent docks. An hourly strip shows **planned cartons vs the sortation-line capacity**. And the
+human stays in charge: click a truck, click a new spot — legal moves get **📌 pinned** (surviving
+re-plans), illegal ones are **blocked** with the exact rule violated.
 
 ## Why ONNX
 

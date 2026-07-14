@@ -38,6 +38,12 @@ def test_hand_arrange_is_slower(df):
     assert by_method["hand"] > by_method["pallet"]
 
 
+def test_export_carries_customs_premium(df):
+    """18W-EXP runs long (customs docs + container seal) vs same-size 18W."""
+    by_type = df.groupby("truck_type")["duration_min"].mean()
+    assert by_type["18W-EXP"] > by_type["18W"] + 20
+
+
 def test_tree_models_beat_linear(fitted):
     board, _ = fitted
     mae = board.set_index("model")["MAE"]

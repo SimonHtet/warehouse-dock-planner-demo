@@ -62,6 +62,7 @@
   table.queue th { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted);
     text-align: left; padding: 3px 3px; border-bottom: 1px solid var(--grid); }
   table.queue td { padding: 3px 3px; border-bottom: 1px solid var(--grid); font-size: 11px; }
+  table.queue tr.unplanned td { color: var(--crit); }
   table.queue td.num, table.queue th.num { text-align: right; }
   table.queue .pred { font-weight: 600; }
   .swatch { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: 0; }
@@ -74,33 +75,58 @@
   .kpi .l { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-top: 1px; }
 
   .board { position: relative; background: var(--surface); border: 1px solid var(--ring); border-radius: 4px; padding: 8px 12px 12px; }
-  .tl-head { position: relative; height: 18px; margin-left: 62px; }
+  .board-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .board-top .nav { padding: 2px 8px; border: 1px solid var(--baseline); background: #fff; border-radius: 3px; font-weight: 700; }
+  .board-top input[type=date] { padding: 2px 6px; border: 1px solid var(--baseline); border-radius: 3px; background: #fff; }
+  .board-top .today { padding: 2px 8px; border: 1px solid var(--navy); color: var(--navy); background: var(--surface);
+    border-radius: 3px; font-weight: 600; font-size: 11px; }
+  .board-top .move-hint { margin-left: auto; font-size: 11px; color: var(--navy); font-weight: 600; min-height: 15px; }
+
+  .cap-strip { display: flex; margin-left: 62px; height: 34px; align-items: flex-end; gap: 1px; margin-bottom: 2px; }
+  .cap-cell { flex: 1; position: relative; height: 100%; border-left: 1px solid var(--grid); }
+  .cap-bar { position: absolute; bottom: 11px; left: 15%; right: 15%; background: var(--navy-2); opacity: .75; border-radius: 2px 2px 0 0; }
+  .cap-bar.over { background: var(--crit); opacity: .9; }
+  .cap-cell .cv { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 8.5px;
+    color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cap-title { margin-left: 62px; font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  .cap-title b { color: var(--ink-2); }
+
+  .tl-head { position: relative; height: 16px; margin-left: 62px; }
   .tl-head span { position: absolute; transform: translateX(-50%); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .dock-row { display: flex; align-items: center; height: 29px; border-top: 1px solid var(--grid); }
+  .dock-row { display: flex; align-items: center; height: 27px; border-top: 1px solid var(--grid); }
   .dock-row.zone-end { border-bottom: 2px solid var(--baseline); }
   .dock-label { width: 62px; flex: none; font-weight: 600; color: var(--ink-2); font-size: 11px; }
   .dock-label .z { font-size: 8.5px; font-weight: 700; color: var(--navy); border: 1px solid var(--navy);
     border-radius: 2px; padding: 0 2px; margin-left: 4px; letter-spacing: .3px; vertical-align: 1px; }
   .lane { position: relative; flex: 1; height: 100%; }
+  .lane.movable { cursor: crosshair; background: rgba(42,120,214,0.045); }
   .gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); }
-  .blk { position: absolute; top: 3px; height: 23px; border-radius: 4px; display: flex; align-items: center;
+  .blk { position: absolute; top: 3px; height: 21px; border-radius: 3px; display: flex; align-items: center;
     padding: 0 5px; overflow: hidden; white-space: nowrap; font-size: 10px; font-weight: 600; color: var(--ink);
-    border: 1px solid; cursor: default; }
+    border: 1px solid; cursor: pointer; }
   .blk .mins { font-weight: 400; color: var(--ink-2); margin-left: 4px; }
   .blk.hand   { background: var(--hand-tint);   border-color: var(--hand);   box-shadow: inset 3px 0 0 var(--hand); }
   .blk.pallet { background: var(--pallet-tint); border-color: var(--pallet); box-shadow: inset 3px 0 0 var(--pallet); }
   .blk.exp { border-style: double; border-width: 3px; }
   .blk.ghost { border-style: dashed; opacity: .75; font-weight: 400; }
+  .blk.sel { outline: 2px dashed var(--navy); outline-offset: 2px; }
   .blk:hover { outline: 2px solid var(--navy); outline-offset: 1px; }
+  .exitseg { position: absolute; top: 8px; height: 11px; background: #3a3935; border-radius: 0 2px 2px 0; opacity: .8; pointer-events: none; }
 
-  .legend { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: var(--ink-2); flex-wrap: wrap; }
+  .legend { display: flex; gap: 14px; margin-top: 8px; font-size: 11px; color: var(--ink-2); flex-wrap: wrap; }
   .legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+  .legend .exit-dot { width: 12px; height: 6px; background: #3a3935; display: inline-block; margin-right: 5px; border-radius: 1px; }
 
   #tip { position: fixed; z-index: 10; pointer-events: none; background: #fff; border: 1px solid var(--baseline);
-    border-radius: 4px; box-shadow: 0 4px 14px rgba(11,11,11,.14); padding: 7px 9px; font-size: 11px; display: none; max-width: 270px; }
+    border-radius: 4px; box-shadow: 0 4px 14px rgba(11,11,11,.14); padding: 7px 9px; font-size: 11px; display: none; max-width: 280px; }
   #tip .t { font-weight: 700; margin-bottom: 3px; }
   #tip .r { display: flex; justify-content: space-between; gap: 14px; color: var(--ink-2); }
   #tip .r b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  #toast { position: fixed; z-index: 20; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--navy);
+    color: #fff; border-radius: 4px; padding: 8px 14px; font-size: 12px; font-weight: 600; display: none;
+    box-shadow: 0 6px 18px rgba(11,11,11,.3); }
+  #toast.block { background: var(--crit); }
 
   footer { padding: 8px 14px 16px; font-size: 11px; color: var(--muted); }
   footer a { color: var(--navy); }
@@ -113,12 +139,13 @@
   <h1>Warehouse Dock Planner</h1>
   <span class="badge">Demo · synthetic data</span>
   <span class="badge" id="modelBadge">loading model…</span>
-  <span class="keys"><kbd>R</kbd> pull SAP + plan &nbsp; <kbd>F8</kbd> re-plan</span>
+  <span class="keys"><kbd>R</kbd> pull SAP + plan &nbsp; <kbd>F8</kbd> re-plan &nbsp; <kbd>Esc</kbd> cancel move</span>
 </header>
 
 <div class="strip">
-  <span><span class="dot" style="background:var(--pallet)"></span><b>ML estimates</b> — XGBoost → ONNX, running in your browser (onnxruntime-web, no backend)</span>
-  <span><span class="dot" style="background:var(--navy)"></span><b>Rules decide</b> — deterministic earliest-start assignment: export pool D1–D7, trailers span 2 docks, +15 min buffer</span>
+  <span><span class="dot" style="background:var(--pallet)"></span><b>ML estimates</b> — XGBoost → ONNX in your browser (onnxruntime-web, no backend)</span>
+  <span><span class="dot" style="background:var(--navy)"></span><b>Rules decide</b> — wave starts (07:00/09:00/…), single-entrance stagger, exports load first on D1–D7, exit-to-gate time by truck size</span>
+  <span><span class="dot" style="background:var(--hand)"></span><b>Humans override</b> — click a truck, click a new spot; illegal moves are blocked</span>
 </div>
 
 <div class="wrap">
@@ -136,9 +163,8 @@
       </div>
       <button class="btn" id="pullBtn">Pull orders from SAP · plan (R)</button>
       <div class="sap-status" id="sapStatus"></div>
-      <div class="note">Orders (cartons, SKUs, arrange method) come from the simulated SAP pull —
-        nothing is typed in. Duration is predicted per order by the ONNX model; docks are then
-        assigned by rules alone.</div>
+      <div class="note">Orders (cartons, SKUs, arrange method) come from the simulated SAP pull for the
+        selected date. Durations are predicted per order by the ONNX model; waves, docks and exits are rules.</div>
     </div>
 
     <div class="panel">
@@ -147,14 +173,14 @@
         <input type="range" id="sAsrs" min="60" max="130" value="100"></div>
       <div class="slider-row"><div class="lab"><span>Forklifts on shift</span><b id="vFork">2</b></div>
         <input type="range" id="sFork" min="1" max="4" value="2"></div>
-      <div class="slider-row"><div class="lab"><span>Sortation rate</span><b><span id="vSort">1400</span> ctn/h</b></div>
+      <div class="slider-row"><div class="lab"><span>Sortation rate (= hourly carton cap)</span><b><span id="vSort">1400</span> ctn/h</b></div>
         <input type="range" id="sSort" min="800" max="2000" step="50" value="1400"></div>
     </div>
 
     <div class="panel">
       <h2>Order queue — predicted duration (ONNX)</h2>
       <table class="queue">
-        <thead><tr><th>Order</th><th>Arr</th><th class="num">Ctn</th><th class="num">SKU</th><th>M</th><th class="num">Est</th></tr></thead>
+        <thead><tr><th>Order</th><th>Wave</th><th class="num">Ctn</th><th class="num">SKU</th><th>M</th><th class="num">Est</th></tr></thead>
         <tbody id="queueBody"></tbody>
       </table>
     </div>
@@ -163,26 +189,38 @@
   <div>
     <div class="kpis">
       <div class="kpi"><div class="v" id="kTrucks">–</div><div class="l">Trucks planned</div></div>
-      <div class="kpi"><div class="v" id="kMakespan">–</div><div class="l">Last dispatch</div></div>
+      <div class="kpi"><div class="v" id="kMakespan">–</div><div class="l">Last gate-out</div></div>
       <div class="kpi"><div class="v" id="kAvg">–</div><div class="l">Avg predicted min</div></div>
       <div class="kpi"><div class="v" id="kUtil">–</div><div class="l">Dock utilization</div></div>
     </div>
 
     <div class="board">
+      <div class="board-top">
+        <button class="nav" id="prevDay">◀</button>
+        <input type="date" id="planDate">
+        <button class="nav" id="nextDay">▶</button>
+        <button class="today" id="todayBtn">Today</button>
+        <span class="move-hint" id="moveHint"></span>
+      </div>
+      <div class="cap-title">Planned cartons per hour vs capacity <b id="capLabel"></b></div>
+      <div class="cap-strip" id="capStrip"></div>
       <div class="tl-head" id="tlHead"></div>
       <div class="tl" id="tl"></div>
       <div class="legend">
         <span><span class="dot" style="background:var(--hand)"></span>Hand-arrange</span>
         <span><span class="dot" style="background:var(--pallet)"></span>Pallet</span>
-        <span><span class="exp-chip">EXP</span> export order (docks D1–D7)</span>
+        <span><span class="exp-chip">EXP</span> export (D1–D7, loads first)</span>
+        <span><span class="exit-dot"></span>exit to gate</span>
         <span>⇕ trailer spans 2 docks</span>
-        <span style="margin-left:auto">06:00 – 20:00 · 16 docks · hover a block</span>
+        <span>📌 pinned by planner</span>
+        <span style="margin-left:auto">06:00 – 20:00 · 16 docks</span>
       </div>
     </div>
   </div>
 </div>
 
 <div id="tip"></div>
+<div id="toast"></div>
 
 <footer>
   All data on this page is synthetic — the "SAP pull" is simulated; no real warehouse, customer,
@@ -196,11 +234,12 @@
 "use strict";
 // ---------- constants ----------
 const DAY_START = 6 * 60, DAY_END = 20 * 60, SPAN = DAY_END - DAY_START;
-const BUFFER_MIN = 15;
+const ANCHORS = [420, 540, 660, 780, 900, 1020];   // wave starts: 07:00, 09:00, … 17:00
+const STAGGER_MIN = 4;                             // one entrance: trucks enter a wave 4 min apart
 const DOCKS = Array.from({ length: 16 }, (_, i) => "D" + (i + 1));
-const EXPORT_DOCKS = 7;                    // D1–D7 = export-capable pool
-const NON_EXP_ON_EXP_PENALTY = 10;         // soft rule: keep export docks free unless clearly faster
+const EXPORT_DOCKS = 7;                            // D1–D7 = export-capable pool
 const PALLET_CAP = { "4W": 3, "6W": 6, "10W": 12, "18W": 20, "18W-T": 26, "18W-EXP": 20, "22W": 32 };
+const EXIT_MIN = { "4W": 5, "6W": 5, "10W": 8, "18W": 12, "18W-T": 15, "18W-EXP": 12, "22W": 15 };
 const TYPES = Object.keys(PALLET_CAP);
 const CUSTOMERS = ["Northgate Trading", "Blue Lotus Mart", "Riverside Retail", "Golden Field Co.",
   "Sunrise Wholesale", "Metro Grocer", "Harbor Foods", "Emerald Distribution"];
@@ -234,15 +273,21 @@ function warehouseState() {
   };
 }
 
-// ---------- fake SAP ----------
-let seed = 20260714;
+// ---------- fake SAP (deterministic per date; R pulls a fresh variant) ----------
 function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0;
   let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
   return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
-let orders = [];
+let orders = [], placedNow = [], unplannedNow = [];
+const variants = {};   // per-date pull counter
+
+function dateSeed() {
+  const d = document.getElementById("planDate").value;
+  return Number(d.replaceAll("-", "")) * 100 + (variants[d] || 0);
+}
+
 function pullFromSap() {
-  const rnd = mulberry32(seed++);
+  const rnd = mulberry32(dateSeed());
   orders = [];
   let so = 10000 + Math.floor(rnd() * 800);
   for (const type of TYPES) {
@@ -258,65 +303,169 @@ function pullFromSap() {
         carton_count: Math.round(pallets * (90 + rnd() * 30)),
         sku_count: 1 + Math.floor(Math.pow(rnd(), 1.6) * 24),
         arrange_method: rnd() < 0.3 ? "hand" : "pallet",
-        arrival: DAY_START + Math.floor(rnd() * 8 * 12) * 5,   // 06:00–14:00, 5-min steps
+        // exports are available from gate-open; domestics spread over the morning
+        arrival: type === "18W-EXP" ? DAY_START
+               : DAY_START + Math.floor(rnd() * 8 * 12) * 5,
+        pin: null,
       });
     }
   }
   orders.sort((a, b) => a.arrival - b.arrival || a.id.localeCompare(b.id));
 }
 
-// ---------- the rules: deterministic earliest-start assignment ----------
+// ---------- the rules ----------
 // ML estimated each order's duration; everything below is auditable logic:
-//   - export orders may only use D1–D7; others prefer D8–D16 (soft 10-min penalty)
+//   - trucks start in WAVES at 07:00/09:00/…, staggered 4 min apart (one entrance)
+//   - exports load in the earliest wave, exclusively on D1–D7
+//   - a dock stays occupied through loading + exit-to-gate (5–15 min by truck size)
 //   - trailers need 2 adjacent docks in D8–D16 (never straddling the D7/D8 zone line)
-//   - +15 min turnaround buffer after every booking
+//   - manual pins are honored first and survive re-plans
+const fits = (busy, docks, s, e) => docks.every(d => busy[d].every(([a, b]) => e <= a || s >= b));
+
 async function plan() {
   const ws = warehouseState();
   const rows = orders.map(o => ({ ...o, ...ws, hour_of_day: Math.floor(o.arrival / 60) }));
   const preds = rows.length ? await predictBatch(rows) : [];
-  const dockFree = Object.fromEntries(DOCKS.map(d => [d, DAY_START]));
-  const placed = [];
+  orders.forEach((o, i) => { o.est = preds[i]; o.dur = Math.max(15, preds[i]); o.exit = EXIT_MIN[o.truck_type]; });
 
-  orders.forEach((o, i) => {
-    const dur = Math.max(15, preds[i]);
-    let best = null;
-    const consider = (docks, penalty) => {
-      const start = Math.max(o.arrival, ...docks.map(d => dockFree[d]));
-      const score = start + penalty;
-      if (!best || score < best.score - 1e-9) best = { docks, start, score };
-    };
-    if (o.trailer) {
-      for (let j = EXPORT_DOCKS; j < DOCKS.length - 1; j++)      // pairs inside D8–D16
-        consider([DOCKS[j], DOCKS[j + 1]], 0);
-    } else if (o.export) {
-      for (let j = 0; j < EXPORT_DOCKS; j++) consider([DOCKS[j]], 0);
-    } else {
-      for (let j = 0; j < DOCKS.length; j++)
-        consider([DOCKS[j]], j < EXPORT_DOCKS ? NON_EXP_ON_EXP_PENALTY : 0);
+  const busy = Object.fromEntries(DOCKS.map(d => [d, []]));
+  const placed = [];
+  const occupy = (o, docks, start) => {
+    const exitEnd = start + o.dur + o.exit;
+    docks.forEach(d => busy[d].push([start, exitEnd]));
+    placed.push(Object.assign(o, { start, finish: start + o.dur, exitEnd, docks }));
+  };
+
+  for (const o of orders.filter(x => x.pin)) {          // pins first
+    if (o.pin.start + o.dur + o.exit <= DAY_END &&
+        fits(busy, o.pin.docks, o.pin.start, o.pin.start + o.dur + o.exit))
+      occupy(o, o.pin.docks, o.pin.start);
+    else o.pin = null;                                  // stale pin: fall back to waves
+  }
+
+  let rest = orders.filter(o => !placed.includes(o));
+  rest.sort((a, b) => (b.export - a.export) || (a.arrival - b.arrival) || a.id.localeCompare(b.id));
+
+  for (const anchor of ANCHORS) {
+    let entry = 0;
+    for (const o of [...rest]) {
+      if (o.arrival > anchor) continue;
+      const start = anchor + STAGGER_MIN * entry;
+      const end = start + o.dur + o.exit;
+      if (end > DAY_END) continue;
+      let pick = null;
+      if (o.trailer) {
+        for (let j = EXPORT_DOCKS; j < DOCKS.length - 1 && !pick; j++)
+          if (fits(busy, [DOCKS[j], DOCKS[j + 1]], start, end)) pick = [DOCKS[j], DOCKS[j + 1]];
+      } else if (o.export) {
+        for (let j = 0; j < EXPORT_DOCKS && !pick; j++)
+          if (fits(busy, [DOCKS[j]], start, end)) pick = [DOCKS[j]];
+      } else {
+        for (let j = EXPORT_DOCKS; j < DOCKS.length && !pick; j++)
+          if (fits(busy, [DOCKS[j]], start, end)) pick = [DOCKS[j]];
+        for (let j = 0; j < EXPORT_DOCKS && !pick; j++)  // export docks usable when free
+          if (fits(busy, [DOCKS[j]], start, end)) pick = [DOCKS[j]];
+      }
+      if (pick) { occupy(o, pick, start); rest.splice(rest.indexOf(o), 1); entry++; }
     }
-    const finish = best.start + dur;
-    best.docks.forEach(d => dockFree[d] = finish + BUFFER_MIN);
-    placed.push({ ...o, est: preds[i], dur, start: best.start, finish, docks: best.docks });
-  });
-  render(placed);
+  }
+  placedNow = placed; unplannedNow = rest;
+  render();
+}
+
+// ---------- manual move: validate, block, or pin ----------
+let moving = null;
+
+function validateMove(o, dockIdx, t) {
+  if (o.export && dockIdx >= EXPORT_DOCKS)
+    return { ok: false, reason: "export orders only load on D1–D7" };
+  if (o.trailer && (dockIdx < EXPORT_DOCKS || dockIdx >= DOCKS.length - 1))
+    return { ok: false, reason: "trailer needs 2 adjacent docks within D8–D16" };
+  const docks = o.trailer ? [DOCKS[dockIdx], DOCKS[dockIdx + 1]] : [DOCKS[dockIdx]];
+  const s = t, e = t + o.dur + o.exit;
+  if (s < DAY_START || e > DAY_END)
+    return { ok: false, reason: "outside the 06:00–20:00 window (incl. exit time)" };
+  if (s < o.arrival)
+    return { ok: false, reason: `truck not available before ${hhmm(o.arrival)}` };
+  for (const p of placedNow) {
+    if (p.id === o.id) continue;
+    if (p.docks.some(d => docks.includes(d)) && !(e <= p.start || s >= p.exitEnd))
+      return { ok: false, reason: `overlaps ${p.id} on ${p.docks.join("+")} (${hhmm(p.start)}–${hhmm(p.exitEnd)})` };
+  }
+  return { ok: true, docks };
+}
+
+function tryMove(o, dockIdx, t) {
+  const v = validateMove(o, dockIdx, t);
+  if (!v.ok) { toast("🚫 Blocked — " + v.reason, true); return false; }
+  o.pin = { docks: v.docks, start: t };
+  Object.assign(o, { start: t, finish: t + o.dur, exitEnd: t + o.dur + o.exit, docks: v.docks });
+  if (!placedNow.includes(o)) { placedNow.push(o); unplannedNow = unplannedNow.filter(u => u.id !== o.id); }
+  toast(`📌 ${o.id} pinned to ${v.docks.join("+")} at ${hhmm(t)}`);
+  render();
+  return true;
+}
+
+function setMoving(o) {
+  moving = o;
+  document.getElementById("moveHint").textContent =
+    o ? `Moving ${o.id} — click a dock lane at the target time · Esc to cancel` : "";
+  render();
 }
 
 // ---------- render ----------
-function render(placed) {
-  document.getElementById("queueBody").innerHTML = placed.map(p => `
-    <tr><td><span class="swatch" style="background:var(--${p.arrange_method})"></span>${p.id.slice(3)} ${p.truck_type}${p.export ? '<span class="exp-chip">EXP</span>' : ""}</td>
-    <td>${hhmm(p.arrival)}</td><td class="num">${p.carton_count}</td><td class="num">${p.sku_count}</td>
-    <td>${p.arrange_method === "hand" ? "H" : "P"}</td>
-    <td class="num pred">${p.est.toFixed(0)}</td></tr>`).join("");
+function capacityBins() {
+  const bins = new Array(14).fill(0);
+  for (const p of placedNow) {
+    const dur = p.finish - p.start;
+    for (let h = 0; h < 14; h++) {
+      const hs = DAY_START + h * 60, he = hs + 60;
+      const ov = Math.max(0, Math.min(p.finish, he) - Math.max(p.start, hs));
+      if (ov > 0) bins[h] += p.carton_count * ov / dur;
+    }
+  }
+  return bins;
+}
 
-  const makespan = placed.length ? Math.max(...placed.map(p => p.finish)) : 0;
-  const booked = placed.reduce((s, p) => s + p.dur * p.docks.length, 0);
-  document.getElementById("kTrucks").textContent = placed.length;
-  document.getElementById("kMakespan").textContent = placed.length ? hhmm(makespan) : "–";
-  document.getElementById("kAvg").textContent = placed.length
-    ? (placed.reduce((s, p) => s + p.dur, 0) / placed.length).toFixed(0) : "–";
-  document.getElementById("kUtil").textContent = placed.length
+function waveOf(p) {
+  if (!p.start) return "–";
+  if (p.pin) return "📌";
+  let w = 1;
+  for (const a of ANCHORS) { if (p.start >= a && p.start < a + 120) return "W" + w; w++; }
+  return "–";
+}
+
+function render() {
+  const all = [...placedNow].sort((a, b) => a.start - b.start);
+  document.getElementById("queueBody").innerHTML = all.map(p => `
+    <tr><td><span class="swatch" style="background:var(--${p.arrange_method})"></span>${p.id.slice(3)} ${p.truck_type}${p.export ? '<span class="exp-chip">EXP</span>' : ""}</td>
+    <td>${waveOf(p)} ${hhmm(p.start)}</td><td class="num">${p.carton_count}</td><td class="num">${p.sku_count}</td>
+    <td>${p.arrange_method === "hand" ? "H" : "P"}</td>
+    <td class="num pred">${p.est.toFixed(0)}</td></tr>`).join("")
+    + unplannedNow.map(o => `
+    <tr class="unplanned"><td>${o.id.slice(3)} ${o.truck_type}${o.export ? '<span class="exp-chip">EXP</span>' : ""}</td>
+    <td>no slot</td><td class="num">${o.carton_count}</td><td class="num">${o.sku_count}</td>
+    <td>${o.arrange_method === "hand" ? "H" : "P"}</td><td class="num pred">${o.est.toFixed(0)}</td></tr>`).join("");
+
+  const makespan = placedNow.length ? Math.max(...placedNow.map(p => p.exitEnd)) : 0;
+  const booked = placedNow.reduce((s, p) => s + (p.exitEnd - p.start) * p.docks.length, 0);
+  document.getElementById("kTrucks").textContent = placedNow.length + (unplannedNow.length ? " / " + orders.length : "");
+  document.getElementById("kMakespan").textContent = placedNow.length ? hhmm(makespan) : "–";
+  document.getElementById("kAvg").textContent = placedNow.length
+    ? (placedNow.reduce((s, p) => s + p.dur, 0) / placedNow.length).toFixed(0) : "–";
+  document.getElementById("kUtil").textContent = placedNow.length
     ? Math.round(100 * booked / (DOCKS.length * SPAN)) + "%" : "–";
+
+  // capacity strip — cap = sortation rate
+  const cap = warehouseState().sortation_rate;
+  document.getElementById("capLabel").textContent = `(cap ${cap.toLocaleString()} ctn/h — sortation)`;
+  const bins = capacityBins();
+  const maxRef = Math.max(cap * 1.2, ...bins);
+  document.getElementById("capStrip").innerHTML = bins.map(v => `
+    <div class="cap-cell">
+      <div class="cap-bar${v > cap ? " over" : ""}" style="height:${Math.max(2, v / maxRef * 22)}px"></div>
+      <div class="cv">${v ? (v / 1000).toFixed(1) + "k" : ""}</div>
+    </div>`).join("");
 
   const head = document.getElementById("tlHead");
   head.innerHTML = "";
@@ -330,22 +479,28 @@ function render(placed) {
   tl.innerHTML = DOCKS.map((d, i) => `
     <div class="dock-row${i === EXPORT_DOCKS - 1 ? " zone-end" : ""}">
       <div class="dock-label">${d}${i < EXPORT_DOCKS ? '<span class="z">EXP</span>' : ""}</div>
-      <div class="lane" data-dock="${d}">
+      <div class="lane${moving ? " movable" : ""}" data-idx="${i}">
         ${Array.from({ length: 15 }, (_, g) => `<div class="gridline" style="left:${(g * 60) / SPAN * 100}%"></div>`).join("")}
       </div></div>`).join("");
 
-  for (const p of placed) {
+  for (const p of placedNow) {
     p.docks.forEach((d, di) => {
-      const lane = tl.querySelector(`.lane[data-dock="${d}"]`);
-      const el = document.createElement("div");
-      el.className = "blk " + p.arrange_method + (p.export ? " exp" : "") + (di > 0 ? " ghost" : "");
-      el.style.left = ((p.start - DAY_START) / SPAN * 100) + "%";
-      el.style.width = "calc(" + (p.dur / SPAN * 100) + "% - 2px)";   // 2px surface gap between fills
-      el.innerHTML = di === 0
-        ? `${p.id.slice(3)}${p.trailer ? " ⇕" : ""}<span class="mins">${p.est.toFixed(0)}m</span>`
+      const lane = tl.querySelector(`.lane[data-idx="${DOCKS.indexOf(d)}"]`);
+      const blk = document.createElement("div");
+      blk.className = "blk " + p.arrange_method + (p.export ? " exp" : "") + (di > 0 ? " ghost" : "")
+        + (moving && moving.id === p.id ? " sel" : "");
+      blk.style.left = ((p.start - DAY_START) / SPAN * 100) + "%";
+      blk.style.width = "calc(" + ((p.finish - p.start) / SPAN * 100) + "% - 2px)";
+      blk.innerHTML = di === 0
+        ? `${p.pin ? "📌" : ""}${p.id.slice(3)}${p.trailer ? " ⇕" : ""}<span class="mins">${p.est.toFixed(0)}m</span>`
         : `⇕ ${p.id.slice(3)}`;
-      el.dataset.tip = JSON.stringify(p);
-      lane.appendChild(el);
+      blk.dataset.oid = p.id;
+      lane.appendChild(blk);
+      const ex = document.createElement("div");                  // exit-to-gate marker
+      ex.className = "exitseg";
+      ex.style.left = ((p.finish - DAY_START) / SPAN * 100) + "%";
+      ex.style.width = (p.exit / SPAN * 100) + "%";
+      lane.appendChild(ex);
     });
   }
 }
@@ -355,47 +510,93 @@ const tip = document.getElementById("tip");
 document.addEventListener("mousemove", e => {
   const blk = e.target.closest(".blk");
   if (!blk) { tip.style.display = "none"; return; }
-  const p = JSON.parse(blk.dataset.tip);
-  tip.innerHTML = `<div class="t">${p.id} — ${p.truck_type}${p.export ? " · EXPORT" : ""}${p.trailer ? " · 2 docks" : ""}</div>
+  const p = orders.find(o => o.id === blk.dataset.oid);
+  if (!p) return;
+  tip.innerHTML = `<div class="t">${p.id} — ${p.truck_type}${p.export ? " · EXPORT" : ""}${p.trailer ? " · 2 docks" : ""}${p.pin ? " · 📌 pinned" : ""}</div>
     <div class="r"><span>Customer</span><b>${p.customer}</b></div>
     <div class="r"><span>Predicted duration</span><b>${p.est.toFixed(1)} min (ONNX)</b></div>
     <div class="r"><span>Cartons / SKUs</span><b>${p.carton_count} / ${p.sku_count}</b></div>
     <div class="r"><span>Arrange method</span><b>${p.arrange_method}</b></div>
-    <div class="r"><span>Arrival → start</span><b>${hhmm(p.arrival)} → ${hhmm(p.start)}</b></div>
-    <div class="r"><span>Dock / finish</span><b>${p.docks.join("+")} / ${hhmm(p.finish)}</b></div>`;
+    <div class="r"><span>Load</span><b>${hhmm(p.start)} – ${hhmm(p.finish)}</b></div>
+    <div class="r"><span>Exit to gate</span><b>${p.exit} min → out ${hhmm(p.exitEnd)}</b></div>
+    <div class="r"><span>Dock</span><b>${p.docks.join("+")}</b></div>
+    <div class="r"><span></span><b style="color:var(--muted);font-weight:400">click to move</b></div>`;
   tip.style.display = "block";
   const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
   const y = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8);
   tip.style.left = x + "px"; tip.style.top = y + "px";
 });
 
+// ---------- toast ----------
+let toastTimer = null;
+function toast(msg, isBlock) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = isBlock ? "block" : "";
+  el.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display = "none", 2800);
+}
+
 // ---------- events ----------
-async function pullAndPlan() {
+document.getElementById("tl").addEventListener("click", e => {
+  const blk = e.target.closest(".blk");
+  if (blk) {
+    const o = orders.find(x => x.id === blk.dataset.oid);
+    setMoving(moving && moving.id === o.id ? null : o);
+    return;
+  }
+  const lane = e.target.closest(".lane");
+  if (lane && moving) {
+    const r = lane.getBoundingClientRect();
+    const t = DAY_START + Math.round(((e.clientX - r.left) / r.width * SPAN) / 5) * 5;
+    if (tryMove(moving, Number(lane.dataset.idx), t)) setMoving(null);
+  }
+});
+
+async function pullAndPlan(newVariant) {
+  const d = document.getElementById("planDate").value;
+  if (newVariant) variants[d] = (variants[d] || 0) + 1;
   const btn = document.getElementById("pullBtn"), st = document.getElementById("sapStatus");
-  btn.disabled = true; st.textContent = "Connecting to SAP (simulated)…";
-  await new Promise(r => setTimeout(r, 500));
+  btn.disabled = true; setMoving(null); st.textContent = "Connecting to SAP (simulated)…";
+  await new Promise(r => setTimeout(r, 450));
   pullFromSap();
-  st.textContent = `Pulled ${orders.length} open orders · planning…`;
+  st.textContent = `Pulled ${orders.length} open orders for ${d} · planning…`;
   await plan();
-  st.textContent = `Pulled ${orders.length} open orders · planned.`;
+  st.textContent = `Pulled ${orders.length} open orders for ${d} · planned`
+    + (unplannedNow.length ? ` · ${unplannedNow.length} without a slot` : "") + ".";
   btn.disabled = false;
 }
-document.getElementById("pullBtn").addEventListener("click", pullAndPlan);
-for (const [s, v, suffix] of [["sAsrs", "vAsrs", ""], ["sFork", "vFork", ""], ["sSort", "vSort", ""]]) {
+document.getElementById("pullBtn").addEventListener("click", () => pullAndPlan(true));
+document.getElementById("planDate").addEventListener("change", () => pullAndPlan(false));
+document.getElementById("prevDay").addEventListener("click", () => shiftDate(-1));
+document.getElementById("nextDay").addEventListener("click", () => shiftDate(1));
+document.getElementById("todayBtn").addEventListener("click", () => { setDate(new Date()); pullAndPlan(false); });
+
+function setDate(d) { document.getElementById("planDate").value = d.toISOString().slice(0, 10); }
+function shiftDate(days) {
+  const el = document.getElementById("planDate");
+  const d = new Date(el.value); d.setDate(d.getDate() + days);
+  setDate(d); pullAndPlan(false);
+}
+
+for (const [s, v] of [["sAsrs", "vAsrs"], ["sFork", "vFork"], ["sSort", "vSort"]]) {
   document.getElementById(s).addEventListener("input", e => {
-    document.getElementById(v).textContent = e.target.value + suffix;
+    document.getElementById(v).textContent = e.target.value;
     if (orders.length) plan();                       // live what-if: re-predict + re-plan
   });
 }
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { setMoving(null); return; }
   if (e.target.matches("input, select")) return;
-  if (e.key === "r" || e.key === "R") pullAndPlan();
+  if (e.key === "r" || e.key === "R") pullAndPlan(true);
   if (e.key === "F8") { e.preventDefault(); if (orders.length) plan(); }
 });
 
 // ---------- boot: load model, self-check against training-time parity ----------
 (async () => {
   const badge = document.getElementById("modelBadge");
+  setDate(new Date());
   try {
     ort.env.wasm.numThreads = 1; // single-threaded: no cross-origin-isolation requirement on Pages
     [meta, session] = await Promise.all([
@@ -407,7 +608,17 @@ document.addEventListener("keydown", e => {
       throw new Error(`parity ${got.toFixed(2)} != ${meta.parity.expected_min}`);
     badge.textContent = `model verified ✓ ${got.toFixed(2)} min`;
     badge.classList.add("ok");
-    await pullAndPlan();
+    await pullAndPlan(false);
+
+    if (new URLSearchParams(location.search).has("selftest")) {
+      const exp = placedNow.find(p => p.export);
+      const dom = placedNow.find(p => !p.export && !p.trailer);
+      const r1 = validateMove(exp, 9, exp.start);            // export → D10: must block
+      const r2 = validateMove(dom, 15, 17 * 60 + 30);        // domestic → D16 @17:30: should pass
+      document.getElementById("sapStatus").textContent =
+        `selftest — export→D10: ${r1.ok ? "ALLOWED (BUG!)" : "blocked ✓ (" + r1.reason + ")"} · ` +
+        `domestic→D16@17:30: ${r2.ok ? "ok ✓" : "blocked (" + r2.reason + ")"}`;
+    }
   } catch (err) {
     badge.textContent = "model failed: " + err.message;
     badge.classList.add("err");
