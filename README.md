@@ -17,6 +17,22 @@ A dock planner has two very different sub-problems, and they deserve different t
 | *How long will this truck occupy a dock?* | Multi-factor pattern with interactions (truck class × cartons × SKUs × arrange method × time-of-day × ASRS/forklift/sortation state) | **ML** — learned regression |
 | *Which dock, which wave?* | Assignment under constraints — must be auditable, explainable, and overridable by a human planner | **Rules** — waves, zones, exits, pins |
 
+The demo ships in two modes:
+
+- **[Auto-plan mode](https://simonhtet.github.io/warehouse-dock-planner-demo/)** (`index.html`) —
+  the engine builds the whole day: gate-open wave, event-driven backfill, manual override with pins.
+- **[Operator mode](https://simonhtet.github.io/warehouse-dock-planner-demo/manual.html)**
+  (`manual.html`) — the control flow real dispatch offices start from: **SAP decides what**
+  (today's trucks, customers, cartons appear by themselves — nobody types counts), **ML estimates
+  how long** (same ONNX model, predicting dock occupancy at the operator's chosen hour), **the
+  operator decides when** (arrival order isn't knowable up front, so times are human input), and
+  **rules decide legal** — zones, the one-entrance gap, and an **hour-of-day carton cap profile**:
+  morning hours run at 2.5× the sortation rate off overnight-staged buffer stock, then drop to the
+  live line rate at 10:00. Illegal placements are blocked with the exact rule named; moving a
+  warehouse-state slider re-predicts every placed truck and flags placements that just became
+  illegal. Every operator-entered time is also the planned-vs-actual label a future
+  arrival-prediction model would train on — the manual path *is* the data collection.
+
 **ML estimates, rules decide.** The ONNX model predicts each order's loading duration; everything
 else is auditable logic: docks open with a **07:00 gate-open wave** (trucks enter 4 min apart —
 one gate), and from then on assignment is **event-driven**: the moment a truck clears its exit, the
