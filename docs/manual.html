@@ -37,7 +37,7 @@
   .strip b { color: var(--ink); }
   .strip .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
 
-  .wrap { display: grid; grid-template-columns: 286px 1fr; gap: 10px; padding: 10px; align-items: start; }
+  .wrap { display: grid; grid-template-columns: 302px 1fr; gap: 10px; padding: 10px; align-items: start; }
   .panel { background: var(--surface); border: 1px solid var(--ring); border-radius: 4px; padding: 10px 12px; margin-bottom: 10px; }
   .panel h2 { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
   .panel h2 .soft { font-weight: 400; text-transform: none; letter-spacing: 0; }
@@ -61,13 +61,17 @@
   .mini td { padding: 2px 3px; border-bottom: 1px dotted var(--grid); color: var(--ink-2); }
   .mini td:last-child { text-align: right; font-weight: 600; color: var(--ink); }
 
-  .q-item { padding: 5px 0; border-bottom: 1px solid var(--grid); cursor: pointer; }
-  .q-item:hover { background: #f4f6fa; }
+  #queue { max-height: 52vh; overflow-y: auto; }
+  .q-item { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--grid); }
   .q-item:last-child { border-bottom: 0; }
+  .q-item .info { flex: 1; min-width: 0; }
   .q-item b { font-size: 11px; }
-  .q-item .meta { color: var(--ink-2); font-size: 10.5px; font-variant-numeric: tabular-nums; }
-  .q-item.sel { background: #eef3fb; outline: 1px solid var(--pallet); outline-offset: -1px; }
+  .q-item .meta { color: var(--ink-2); font-size: 10.5px; font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .q-item .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+  .q-hour { flex: none; width: 74px; padding: 2px 3px; border: 1px solid var(--baseline); border-radius: 3px;
+    background: #fff; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .q-hour:focus { outline: 2px solid var(--pallet); outline-offset: -1px; }
   .exp-chip { font-size: 9px; font-weight: 700; color: var(--navy); border: 1px solid var(--navy);
     border-radius: 2px; padding: 0 3px; margin-left: 4px; letter-spacing: .3px; }
   .none-msg { color: var(--muted); font-size: 11px; }
@@ -109,7 +113,6 @@
   .dock-label .z { font-size: 8.5px; font-weight: 700; color: var(--navy); border: 1px solid var(--navy);
     border-radius: 2px; padding: 0 2px; margin-left: 4px; letter-spacing: .3px; vertical-align: 1px; }
   .lane { position: relative; flex: 1; height: 100%; }
-  .lane.movable { cursor: crosshair; background: rgba(42,120,214,0.045) !important; }
   .lane .closed { position: absolute; top: 0; bottom: 0; left: 0; background: repeating-linear-gradient(45deg, #f5f4f1 0 6px, #efeeea 6px 12px); pointer-events: none; }
   .gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); opacity: .45; }
   .gridline.major { opacity: 1; }
@@ -155,14 +158,14 @@
   <h1>Warehouse Dock Planner — Operator Mode</h1>
   <span class="badge">Demo · synthetic data</span>
   <span class="badge" id="modelBadge">loading model…</span>
-  <span class="keys"><kbd>R</kbd> re-pull SAP &nbsp; <kbd>Esc</kbd> cancel &nbsp; <a href="index.html">auto-plan mode →</a></span>
+  <span class="keys"><kbd>R</kbd> re-pull SAP &nbsp; <kbd>Esc</kbd> deselect &nbsp; <a href="index.html">auto-plan mode →</a></span>
 </header>
 
 <div class="strip">
   <span><span class="dot" style="background:var(--navy)"></span><b>SAP decides what</b> — today's trucks, customers and cartons arrive by themselves; nobody types counts</span>
   <span><span class="dot" style="background:var(--pallet)"></span><b>ML estimates how long</b> — ONNX in your browser predicts each truck's dock occupancy</span>
-  <span><span class="dot" style="background:var(--hand)"></span><b>The operator decides when</b> — arrival order isn't knowable up front, so times are human input</span>
-  <span><b>Rules decide legal</b> — zones, one entrance, and hour-of-day carton caps block bad placements</span>
+  <span><span class="dot" style="background:var(--hand)"></span><b>The operator decides when</b> — pick the hour beside the order; the system finds a legal dock and minute</span>
+  <span><b>Rules decide legal</b> — zones, one entrance, and hourly carton caps refuse hours that don't fit</span>
 </div>
 
 <div class="wrap">
@@ -179,6 +182,18 @@
     </div>
 
     <div class="panel">
+      <h2>Hourly loading caps <span class="soft">— fixed profile v0</span></h2>
+      <table class="mini">
+        <tr><td>07:00–10:00</td><td>35,000 ctn/h</td></tr>
+        <tr><td>10:00–20:00</td><td>13,000 ctn/h</td></tr>
+      </table>
+      <div class="note">Morning hours are backed by stock staged overnight; from 10:00 the cap is
+        the live constraint — picking rate + forklifts + sortation. Fixed numbers for now; the
+        per-day data feed to derive them comes later. A truck's cartons count against the hours
+        its loading actually spans.</div>
+    </div>
+
+    <div class="panel">
       <h2>Warehouse state — re-predicts durations</h2>
       <div class="slider-row"><div class="lab"><span>ASRS picking rate</span><b><span id="vAsrs">100</span> plt/h</b></div>
         <input type="range" id="sAsrs" min="60" max="130" value="100"></div>
@@ -191,15 +206,7 @@
     </div>
 
     <div class="panel">
-      <h2>Hourly carton caps <span class="soft">— time-of-day profile</span></h2>
-      <table class="mini" id="capTable"></table>
-      <div class="note">Morning hours run from stock staged overnight, so they take 2.5× the
-        sortation rate; from 10:00 the buffer is gone and the live sortation line is the cap.
-        A truck's cartons count against the hours its loading actually spans.</div>
-    </div>
-
-    <div class="panel">
-      <h2>Truck queue <span class="soft">— click, then click a lane at the time</span></h2>
+      <h2>Truck queue <span class="soft">— pick the hour, the system does the rest</span></h2>
       <div id="queue" class="none-msg">—</div>
     </div>
   </div>
@@ -221,14 +228,14 @@
         <span class="move-hint" id="moveHint"></span>
         <button class="mb-btn" id="unassignBtn">Unassign</button>
       </div>
-      <div class="cap-title">Planned cartons per hour vs cap <b id="capLabel"></b></div>
+      <div class="cap-title">Planned cartons per hour vs cap <b>(35k buffer-backed → 13k live)</b></div>
       <div class="cap-strip" id="capStrip"></div>
       <div class="tl-head" id="tlHead"></div>
       <div class="tl" id="tl"></div>
       <div class="legend">
         <span><span class="dot" style="background:var(--hand)"></span>Hand-arrange</span>
         <span><span class="dot" style="background:var(--pallet)"></span>Pallet</span>
-        <span><span class="exp-chip">EXP</span> export (D1–D7 only)</span>
+        <span><span class="exp-chip">EXP</span> export — first choice on D1–D7; domestics spill in when free</span>
         <span><span class="exit-dot"></span>exit to gate</span>
         <span>⇕ trailer spans 2 docks (D8–D16)</span>
         <span>one entrance: starts ≥ 4 min apart</span>
@@ -255,13 +262,16 @@
 // ---------- constants ----------
 const DAY_START = 6 * 60, DAY_END = 20 * 60, SPAN = DAY_END - DAY_START;
 const OPS_START = 7 * 60;                          // docks open 07:00
+const LAST_HOUR = 19;                              // last selectable start hour
 const ENTRY_GAP = 4;                               // one entrance: trucks enter 4 min apart
 const N_CAP_HOURS = 13;                            // cap bins 07:00..19:00
+const capOfHour = h => (7 + h) < 10 ? 35000 : 13000;   // fixed profile v0
+const capWhy = h => (7 + h) < 10 ? "backed by overnight-staged buffer" : "live picking + sortation rate";
+
 const DOCKS = Array.from({ length: 16 }, (_, i) => "D" + (i + 1));
 const EXPORT_DOCKS = 7;                            // D1–D7 = export-capable pool
 const PALLET_CAP = { "4W": 3, "6W": 6, "10W": 12, "18W": 20, "18W-T": 26, "18W-EXP": 20, "22W": 32 };
 const EXIT_MIN = { "4W": 5, "6W": 5, "10W": 8, "18W": 12, "18W-T": 15, "18W-EXP": 12, "22W": 15 };
-const TYPES = Object.keys(PALLET_CAP);
 const TYPE_MIX = ["4W","4W","4W","6W","6W","6W","10W","10W","10W","10W","18W","18W","18W","18W-T","18W-T","18W-EXP","18W-EXP","18W-EXP","22W","22W"];
 const CUSTOMERS = ["Northgate Trading", "Blue Lotus Mart", "Riverside Retail", "Golden Field Co.",
   "Sunrise Wholesale", "Metro Grocer", "Harbor Foods", "Emerald Distribution"];
@@ -270,10 +280,14 @@ const hhmm = m => pad(Math.floor(m / 60)) + ":" + pad(Math.round(m % 60));
 const fmtN = n => Math.round(n).toLocaleString("en-US");
 const fmtK = n => Math.abs(n) >= 1000 ? (Math.round(n / 100) / 10) + "k" : String(Math.round(n));
 
-// morning hours run from the overnight-staged buffer; after 10:00 the live sortation line is the cap
-const capOfHour = h => (7 + h) < 10 ? Math.round(warehouseState().sortation_rate * 2.5 / 50) * 50
-                                    : warehouseState().sortation_rate;
-const capWhy = h => (7 + h) < 10 ? "backed by overnight-staged buffer (2.5× sortation)" : "live sortation line";
+// dock search order: exports own D1–D7; domestics take regular docks first and
+// spill into the export pool only when it's free — export is always first choice there
+function dockPreference(o) {
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+  if (o.export) return range(0, EXPORT_DOCKS - 1);
+  if (o.trailer) return range(EXPORT_DOCKS, DOCKS.length - 2);       // anchors D8..D15
+  return range(EXPORT_DOCKS, DOCKS.length - 1).concat(range(0, EXPORT_DOCKS - 1).reverse());
+}
 
 // ---------- model ----------
 let session = null, meta = null;
@@ -307,7 +321,7 @@ function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0;
   let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
   return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
-let orders = [], placed = [], moving = null;
+let orders = [], placed = [], selected = null;
 const variants = {};   // per-date pull counter
 
 function dateSeed() {
@@ -319,12 +333,12 @@ function pullFromSap() {
   const rnd = mulberry32(dateSeed());
   orders = [];
   let so = 10000 + Math.floor(rnd() * 800);
-  const n = 12 + Math.floor(rnd() * 7);            // trucks today: 12–18, SAP decides
+  const n = 78 + Math.floor(rnd() * 15);            // trucks today: 78–92, SAP decides
   for (let i = 0; i < n; i++) {
     const type = TYPE_MIX[Math.floor(rnd() * TYPE_MIX.length)];
     const pallets = Math.max(1, Math.round(PALLET_CAP[type] * (0.6 + rnd() * 0.4)));
     orders.push({
-      id: "SO-" + (so += 1 + Math.floor(rnd() * 20)),
+      id: "SO-" + (so += 1 + Math.floor(rnd() * 9)),
       customer: CUSTOMERS[Math.floor(rnd() * CUSTOMERS.length)],
       truck_type: type,
       export: type === "18W-EXP",
@@ -338,7 +352,7 @@ function pullFromSap() {
   }
   orders.sort((a, b) => (b.export - a.export) || (a.arrival - b.arrival) || a.id.localeCompare(b.id));
   placed = [];   // times are operator input — a fresh pull starts with an empty board
-  setMoving(null);
+  setSelected(null);
 }
 
 // ---------- validation: the write-guard rule set ----------
@@ -378,7 +392,7 @@ function validatePlace(o, dockIdx, t, dur) {
       return { ok: false, reason: "one entrance — " + p.id + " already enters at " + hhmm(p.start) + " (needs ≥ " + ENTRY_GAP + " min gap)" };
   }
 
-  // hour-of-day carton cap: this truck's cartons spread over its loading time
+  // hourly carton cap: this truck's cartons spread over its loading time
   const bins = capBins(o.id);
   for (let h = 0; h < N_CAP_HOURS; h++) {
     const hs = OPS_START + h * 60, he = hs + 60;
@@ -394,34 +408,46 @@ function validatePlace(o, dockIdx, t, dur) {
   return { ok: true, docks, exit, out };
 }
 
-async function tryPlace(o, dockIdx, t) {
+/* The operator picks only the HOUR. The system finds the exact minute and a legal dock:
+   every 5-min start inside the hour × the dock preference order, first fit wins. */
+async function placeAtHour(o, hour) {
   let dur = o._fixedDur;
   if (dur == null) {   // ML estimates dock occupancy at the operator's chosen hour
-    const [est] = await predictBatch([{ ...o, ...warehouseState(), hour_of_day: Math.floor(t / 60) }]);
+    const [est] = await predictBatch([{ ...o, ...warehouseState(), hour_of_day: hour }]);
     o.est = est;
     dur = Math.max(15, est);
   }
-  const v = validatePlace(o, dockIdx, t, dur);
-  if (!v.ok) { toast("🚫 Blocked — " + v.reason, true); return false; }
-  placed = placed.filter(p => p.id !== o.id);
-  placed.push(Object.assign(o, { start: t, finish: t + dur, out: v.out, dur, exit: v.exit, docks: v.docks, bad: null }));
-  toast("✓ " + o.id + " → " + v.docks.join("+") + " at " + hhmm(t) + " · est " + Math.round(dur) + " min (ONNX)");
+  const prefs = dockPreference(o);
+  let capReason = null, lastReason = null;
+  for (let t = hour * 60; t < hour * 60 + 60; t += 5) {
+    for (const d of prefs) {
+      const v = validatePlace(o, d, t, dur);
+      if (v.ok) {
+        placed = placed.filter(p => p.id !== o.id);
+        placed.push(Object.assign(o, { start: t, finish: t + dur, out: v.out, dur, exit: v.exit, docks: v.docks, bad: null }));
+        toast("✓ " + o.id + " → " + v.docks.join("+") + " at " + hhmm(t) + " · est " + Math.round(dur) + " min (ONNX)");
+        setSelected(null);
+        return true;
+      }
+      if (v.reason.includes("cap")) capReason = v.reason; else lastReason = v.reason;
+    }
+  }
+  toast("🚫 " + o.id + " doesn't fit in " + pad(hour) + ":00 — " + (capReason || lastReason || "no legal dock"), true);
   render();
-  return true;
+  return false;
 }
 
 function unassign(o) {
   placed = placed.filter(p => p.id !== o.id);
   toast("↩ " + o.id + " back in the queue");
-  setMoving(null);
+  setSelected(null);
 }
 
-function setMoving(o) {
-  moving = o;
+function setSelected(o) {
+  selected = o;
   document.getElementById("moveHint").textContent =
-    o ? "Placing " + o.id + " — click a dock lane at the start time · Esc to cancel" : "";
-  document.getElementById("unassignBtn").className =
-    "mb-btn" + (o && placed.some(p => p.id === o.id) ? " on" : "");
+    o ? o.id + " — " + o.customer + " · " + hhmm(o.start) + " on " + o.docks.join("+") : "";
+  document.getElementById("unassignBtn").className = "mb-btn" + (o ? " on" : "");
   render();
 }
 
@@ -452,6 +478,13 @@ async function rePredictAll() {
 }
 
 // ---------- render ----------
+function hourOptions(o) {
+  const from = Math.max(Math.floor(Math.max(o.arrival, OPS_START) / 60), 7);
+  let h = '<option value="">hour…</option>';
+  for (let hr = from; hr <= LAST_HOUR; hr++) h += '<option value="' + hr + '">' + pad(hr) + ":00</option>";
+  return h;
+}
+
 function render() {
   const isPlaced = o => placed.some(p => p.id === o.id);
   const queue = orders.filter(o => !isPlaced(o));
@@ -462,11 +495,12 @@ function render() {
   document.getElementById("dsCtn").textContent = orders.length ? fmtN(orders.reduce((s, o) => s + o.carton_count, 0)) : "—";
 
   document.getElementById("queue").innerHTML = queue.length ? queue.map(o =>
-    '<div class="q-item' + (moving && moving.id === o.id ? " sel" : "") + '" data-oid="' + o.id + '">' +
+    '<div class="q-item" data-oid="' + o.id + '"><div class="info">' +
       '<span class="sw" style="background:var(--' + o.arrange_method + ')"></span><b>' + o.id + "</b> · " + o.customer +
       (o.export ? '<span class="exp-chip">EXP</span>' : "") +
       '<div class="meta">' + fmtN(o.carton_count) + " ctn · " + o.sku_count + " SKU · " + o.truck_type +
-      " · from " + hhmm(Math.max(o.arrival, OPS_START)) + (o.est ? " · est ~" + Math.round(o.est) + "m" : "") + "</div></div>"
+      " · from " + hhmm(Math.max(o.arrival, OPS_START)) + (o.est ? " · ~" + Math.round(o.est) + "m" : "") + "</div></div>" +
+      '<select class="q-hour" data-oid="' + o.id + '">' + hourOptions(o) + "</select></div>"
   ).join("") : '<span class="none-msg" style="color:var(--good);font-weight:600">✓ All trucks scheduled</span>';
 
   const cartons = placed.reduce((s, p) => s + p.carton_count, 0);
@@ -491,21 +525,14 @@ function render() {
   document.getElementById("kHead").textContent = minH === null ? "–" : fmtK(minHead);
   document.getElementById("kHeadSub").textContent = minH === null ? "nothing scheduled yet"
     : "headroom @ " + hhmm(OPS_START + minH * 60) + " (cap " + fmtK(capOfHour(minH)) + ")";
-  document.getElementById("kHeadSub").className = "sub" + (minH !== null && minHead < 150 ? " warn" : "");
+  document.getElementById("kHeadSub").className = "sub" + (minH !== null && minHead < 2000 ? " warn" : "");
 
-  // cap table (left panel) + strip
-  const ws = warehouseState();
-  const mCap = Math.round(ws.sortation_rate * 2.5 / 50) * 50;
-  document.getElementById("capTable").innerHTML =
-    "<tr><td>07:00–10:00</td><td>" + fmtN(mCap) + " ctn/h</td></tr>" +
-    "<tr><td>10:00–20:00</td><td>" + fmtN(ws.sortation_rate) + " ctn/h</td></tr>";
-  document.getElementById("capLabel").textContent = "(" + fmtK(mCap) + " buffer-backed → " + fmtK(ws.sortation_rate) + " live sortation)";
   document.getElementById("capStrip").innerHTML =
     '<div class="cap-cell off" style="flex:' + (OPS_START - DAY_START) + '"><div class="cv">closed</div></div>' +
     bins.map((v, h) => {
       const cap = capOfHour(h);
       const pct = v / cap;
-      const cls = cap - v < cap * 0.08 ? " full" : pct >= 0.8 ? " near" : "";
+      const cls = cap - v < 1500 ? " full" : pct >= 0.8 ? " near" : "";
       return '<div class="cap-cell" style="flex:60" data-h="' + h + '">' +
         '<div class="cap-bar' + cls + '" style="height:' + Math.max(2, Math.min(1, pct) * 26) + 'px"></div>' +
         '<div class="cv">' + (v ? fmtK(v) : "0") + "/" + fmtK(cap) + "</div></div>";
@@ -523,7 +550,7 @@ function render() {
   tl.innerHTML = DOCKS.map((d, i) => `
     <div class="dock-row${i === EXPORT_DOCKS - 1 ? " zone-end" : ""}">
       <div class="dock-label">${d}${i < EXPORT_DOCKS ? '<span class="z">EXP</span>' : ""}</div>
-      <div class="lane${moving ? " movable" : ""}" data-idx="${i}">
+      <div class="lane" data-idx="${i}">
         <div class="closed" style="width:${(OPS_START - DAY_START) / SPAN * 100}%"></div>
         ${Array.from({ length: 15 }, (_, g) => `<div class="gridline${(6 + g) % 2 === 0 ? " major" : ""}" style="left:${(g * 60) / SPAN * 100}%"></div>`).join("")}
       </div></div>`).join("");
@@ -533,7 +560,7 @@ function render() {
       const lane = tl.querySelector(`.lane[data-idx="${DOCKS.indexOf(d)}"]`);
       const blk = document.createElement("div");
       blk.className = "blk " + p.arrange_method + (p.export ? " exp" : "") + (di > 0 ? " ghost" : "")
-        + (moving && moving.id === p.id ? " sel" : "") + (p.bad ? " bad" : "");
+        + (selected && selected.id === p.id ? " sel" : "") + (p.bad ? " bad" : "");
       blk.style.left = ((p.start - DAY_START) / SPAN * 100) + "%";
       blk.style.width = "calc(" + ((p.finish - p.start) / SPAN * 100) + "% - 2px)";
       blk.innerHTML = di === 0
@@ -558,7 +585,7 @@ function render() {
 const tip = document.getElementById("tip");
 document.addEventListener("mousemove", e => {
   const el = e.target.closest(".blk, .q-item, .cap-cell[data-h]");
-  if (!el) { tip.style.display = "none"; return; }
+  if (!el || e.target.closest(".q-hour")) { tip.style.display = "none"; return; }
   let html = "";
   if (el.dataset.h !== undefined) {
     const h = Number(el.dataset.h), bins = capBins(null), cap = capOfHour(h);
@@ -581,7 +608,8 @@ document.addEventListener("mousemove", e => {
            '<div class="r"><span>Exit to gate</span><b>' + p.exit + " min → out " + hhmm(p.out) + "</b></div>" +
            '<div class="r"><span>Dock</span><b>' + p.docks.join("+") + "</b></div>" : "") +
       (p && p.bad ? '<div class="sect bad">⚠ now illegal: ' + p.bad + "</div>"
-                  : '<div class="r"><span></span><b style="color:var(--muted);font-weight:400">' + (p ? "click to move" : "click to place") + "</b></div>");
+                  : p ? '<div class="r"><span></span><b style="color:var(--muted);font-weight:400">click to select / unassign</b></div>'
+                      : '<div class="r"><span></span><b style="color:var(--muted);font-weight:400">pick an hour to schedule</b></div>');
   }
   tip.innerHTML = html;
   tip.style.display = "block";
@@ -604,28 +632,19 @@ function toast(msg, isBlock) {
 // ---------- events ----------
 document.getElementById("tl").addEventListener("click", e => {
   const blk = e.target.closest(".blk");
-  if (blk) {
-    const o = orders.find(x => x.id === blk.dataset.oid);
-    setMoving(moving && moving.id === o.id ? null : o);
-    return;
-  }
-  const lane = e.target.closest(".lane");
-  if (lane && moving) {
-    const r = lane.getBoundingClientRect();
-    const t = DAY_START + Math.round(((e.clientX - r.left) / r.width * SPAN) / 5) * 5;
-    const o = moving;
-    tryPlace(o, Number(lane.dataset.idx), t).then(ok => { if (ok) setMoving(null); });
-  }
+  if (!blk) { setSelected(null); return; }
+  const o = placed.find(x => x.id === blk.dataset.oid);
+  setSelected(selected && selected.id === o.id ? null : o);
 });
 
-document.getElementById("queue").addEventListener("click", e => {
-  const item = e.target.closest(".q-item");
-  if (!item) return;
-  const o = orders.find(x => x.id === item.dataset.oid);
-  setMoving(moving && moving.id === o.id ? null : o);
+document.getElementById("queue").addEventListener("change", e => {
+  const sel = e.target.closest(".q-hour");
+  if (!sel || sel.value === "") return;
+  const o = orders.find(x => x.id === sel.dataset.oid);
+  placeAtHour(o, Number(sel.value));
 });
 
-document.getElementById("unassignBtn").addEventListener("click", () => { if (moving) unassign(moving); });
+document.getElementById("unassignBtn").addEventListener("click", () => { if (selected) unassign(selected); });
 
 async function pullAndRender(newVariant) {
   const d = document.getElementById("planDate").value;
@@ -657,38 +676,42 @@ for (const [s, v] of [["sAsrs", "vAsrs"], ["sFork", "vFork"], ["sSort", "vSort"]
   });
 }
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { setMoving(null); return; }
+  if (e.key === "Escape") { setSelected(null); return; }
   if (e.target.matches("input, select")) return;
   if (e.key === "r" || e.key === "R") pullAndRender(true);
 });
 
-// ---------- self-test (?selftest=1): rule set with fixed durations ----------
+// ---------- self-test (?selftest=1): rule set + hour-based auto-dock placement ----------
 async function selftest() {
   const res = [];
   const T = (name, cond) => res.push((cond ? "✓ " : "✗ ") + name);
   let tid = 0;
   const mk = over => Object.assign({ id: "SO-TEST" + (++tid), customer: "test",
-    truck_type: "10W", export: false, trailer: false, carton_count: 600, sku_count: 8,
+    truck_type: "10W", export: false, trailer: false, carton_count: 1400, sku_count: 8,
     arrange_method: "pallet", arrival: OPS_START, _fixedDur: 55 }, over);
-  const liveCap = warehouseState().sortation_rate;   // default 1400
 
   T("export blocked on D10", !validatePlace(mk({ export: true, truck_type: "18W-EXP" }), 9, OPS_START, 55).ok);
   T("trailer blocked at D7 (needs D8–D16)", !validatePlace(mk({ trailer: true, truck_type: "18W-T" }), 6, OPS_START, 55).ok);
   T("before 07:00 blocked", !validatePlace(mk(), 8, OPS_START - 30, 55).ok);
   T("before truck availability blocked", !validatePlace(mk({ arrival: 9 * 60 }), 8, 8 * 60, 55).ok);
 
-  const first = mk();
-  T("placement accepted", await tryPlace(first, 8, OPS_START));
-  T("entry gap: start 2 min later blocked", !validatePlace(mk(), 9, OPS_START + 2, 55).ok);
-  T("overlap on same dock blocked", !validatePlace(mk(), 8, OPS_START + 10, 55).ok);
+  // hour-based placement: operator picks the hour, system finds dock + minute
+  const expO = mk({ export: true, truck_type: "18W-EXP" });
+  T("export placed at 07:00", await placeAtHour(expO, 7));
+  T("export landed on D1–D7", DOCKS.indexOf(expO.docks[0]) < EXPORT_DOCKS);
+  const domO = mk();
+  T("domestic placed at 07:00", await placeAtHour(domO, 7));
+  T("domestic preferred D8+ while free", DOCKS.indexOf(domO.docks[0]) >= EXPORT_DOCKS);
+  T("second start shifted ≥ 4 min (one entrance)", Math.abs(domO.start - expO.start) >= ENTRY_GAP);
+  T("overlap on same dock blocked", !validatePlace(mk(), DOCKS.indexOf(domO.docks[0]), domO.start + 10, 55).ok);
 
-  // cap: fill 14:00 to (cap − 100) within the hour, then the next truck must be refused
-  T("cap filler fits at 14:00", await tryPlace(mk({ carton_count: liveCap - 100 }), 10, 14 * 60));
-  T("14:00 live cap blocks the next truck", !validatePlace(mk(), 11, 14 * 60 + 10, 55).ok);
-  T("same truck fine in a buffer-backed morning hour", validatePlace(mk(), 11, OPS_START + 10, 55).ok);
+  // cap: fill 14:00 to 12.9k of its 13k limit within the hour, then a same-hour add must be refused
+  T("cap filler fits at 14:00", await placeAtHour(mk({ carton_count: 12900 }), 14));
+  T("14:00 direct add over cap blocked", !validatePlace(mk(), 12, 14 * 60 + 10, 40).ok);
+  T("same truck fine in a 35k morning hour", validatePlace(mk(), 12, OPS_START + 10, 40).ok);
 
   const n0 = placed.length;
-  unassign(first);
+  unassign(domO);
   T("unassign returns truck to queue", placed.length === n0 - 1);
 
   placed = placed.filter(p => !p.id.startsWith("SO-TEST"));   // leave the board clean

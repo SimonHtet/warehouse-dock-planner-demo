@@ -23,12 +23,13 @@ The demo ships in two modes:
   the engine builds the whole day: gate-open wave, event-driven backfill, manual override with pins.
 - **[Operator mode](https://simonhtet.github.io/warehouse-dock-planner-demo/manual.html)**
   (`manual.html`) — the control flow real dispatch offices start from: **SAP decides what**
-  (today's trucks, customers, cartons appear by themselves — nobody types counts), **ML estimates
-  how long** (same ONNX model, predicting dock occupancy at the operator's chosen hour), **the
-  operator decides when** (arrival order isn't knowable up front, so times are human input), and
-  **rules decide legal** — zones, the one-entrance gap, and an **hour-of-day carton cap profile**:
-  morning hours run at 2.5× the sortation rate off overnight-staged buffer stock, then drop to the
-  live line rate at 10:00. Illegal placements are blocked with the exact rule named; moving a
+  (a ~90-truck day appears by itself — nobody types counts), **ML estimates how long** (same ONNX
+  model, predicting dock occupancy at the operator's chosen hour), **the operator decides when**
+  (arrival order isn't knowable up front — pick the hour beside the order; the system finds a
+  legal dock and minute, exports holding first refusal on D1–D7 with domestics spilling in when
+  free), and **rules decide legal** — zones, the one-entrance gap, and an **hourly carton cap
+  profile** (35k/h mornings backed by overnight-staged buffer, 13k/h once the live line rate takes
+  over at 10:00). Hours that don't fit are refused with the exact rule named; moving a
   warehouse-state slider re-predicts every placed truck and flags placements that just became
   illegal. Every operator-entered time is also the planned-vs-actual label a future
   arrival-prediction model would train on — the manual path *is* the data collection.
