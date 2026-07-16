@@ -19,6 +19,10 @@ from config import ARRANGE_METHODS, N_EVENTS, PALLET_CAP, SEED, TRUCK_TYPES
 
 CARTONS_PER_PALLET = (100, 180)
 
+# Big trucks run denser pallets (more cartons, similar handling time): fixed
+# carton ranges per class instead of the per-pallet density above.
+DENSE_CTN = {"18W": (2400, 3200), "18W-T": (2400, 3600), "18W-EXP": (4500, 5300)}
+
 
 def make_synthetic(n: int = N_EVENTS, seed: int = SEED) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
@@ -27,6 +31,9 @@ def make_synthetic(n: int = N_EVENTS, seed: int = SEED) -> pd.DataFrame:
 
     pallets = np.maximum(1, np.round(cap * rng.uniform(0.6, 1.0, size=n)))
     cartons = np.round(pallets * rng.integers(*CARTONS_PER_PALLET, size=n)).astype(int)
+    for t, (lo, hi) in DENSE_CTN.items():
+        m = truck == t
+        cartons[m] = rng.integers(lo, hi + 1, size=m.sum())
     skus = 1 + rng.binomial(24, 0.25, size=n)                      # skewed low, 1–25
     method = rng.choice(ARRANGE_METHODS, size=n, p=[0.3, 0.7])
     hour = rng.integers(6, 18, size=n)
@@ -37,7 +44,7 @@ def make_synthetic(n: int = N_EVENTS, seed: int = SEED) -> pd.DataFrame:
     hand = method == "hand"
     load = np.where(
         hand,
-        cartons * 0.035 * (1200 / sortation) ** 0.8,               # hand: carton-by-carton
+        cartons * 0.020 * (1200 / sortation) ** 0.8,               # hand: carton-by-carton (denser pallets → faster per carton)
         pallets * (60 / asrs) + pallets * 1.8 / np.sqrt(forklifts) # pallet: ASRS + forklift
     )
     sku_overhead = skus * np.where(hand, 1.5, 0.8)

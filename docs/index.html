@@ -314,13 +314,15 @@ function pullFromSap() {
     const n = Number(document.getElementById("n" + type).value) || 0;
     for (let i = 0; i < n; i++) {
       const pallets = Math.max(1, Math.round(PALLET_CAP[type] * (0.6 + rnd() * 0.4)));
+      // big trucks run denser pallets — fixed carton ranges (must match DENSE_CTN in src/synth.py)
+      const dense = { "18W": [2400, 3200], "18W-T": [2400, 3600], "18W-EXP": [4500, 5300] }[type];
       orders.push({
         id: "SO-" + (so += 1 + Math.floor(rnd() * 20)),
         customer: CUSTOMERS[Math.floor(rnd() * CUSTOMERS.length)],
         truck_type: type,
         export: type === "18W-EXP",
         trailer: type === "18W-T",
-        carton_count: Math.round(pallets * (90 + rnd() * 30)),
+        carton_count: dense ? Math.round(dense[0] + rnd() * (dense[1] - dense[0])) : Math.round(pallets * (90 + rnd() * 30)),
         sku_count: 1 + Math.floor(Math.pow(rnd(), 1.6) * 24),
         arrange_method: rnd() < 0.3 ? "hand" : "pallet",
         // exports are available from gate-open; domestics spread over the morning

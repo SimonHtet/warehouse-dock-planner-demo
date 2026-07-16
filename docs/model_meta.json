@@ -33,18 +33,18 @@
   "metrics": [
     {
       "model": "XGBoost",
-      "MAE": 5.939,
-      "RMSE": 7.649
+      "MAE": 6.112,
+      "RMSE": 7.805
     },
     {
       "model": "RandomForest",
-      "MAE": 6.742,
-      "RMSE": 8.778
+      "MAE": 6.926,
+      "RMSE": 8.924
     },
     {
       "model": "Linear",
-      "MAE": 8.91,
-      "RMSE": 11.502
+      "MAE": 10.454,
+      "RMSE": 14.925
     }
   ],
   "parity": {
@@ -58,9 +58,9 @@
       "forklift_count": 2,
       "sortation_rate": 1400
     },
-    "expected_min": 148.34
+    "expected_min": 87.8
   },
-  "trained_at": "2026-07-14",
+  "trained_at": "2026-07-16",
   "seed": 42,
   "n_events": 4000
 }
