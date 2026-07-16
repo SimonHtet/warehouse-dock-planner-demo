@@ -17,7 +17,7 @@ import pandas as pd
 
 from config import ARRANGE_METHODS, N_EVENTS, PALLET_CAP, SEED, TRUCK_TYPES
 
-CARTONS_PER_PALLET = (90, 120)
+CARTONS_PER_PALLET = (100, 180)
 
 
 def make_synthetic(n: int = N_EVENTS, seed: int = SEED) -> pd.DataFrame:
