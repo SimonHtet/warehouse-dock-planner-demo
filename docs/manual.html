@@ -150,6 +150,22 @@
 
   footer { padding: 8px 14px 16px; font-size: 11px; color: var(--muted); }
   footer a { color: var(--navy); }
+
+  .sheet-wrap { padding: 0 10px 10px; }
+  .sheet-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .sheet-head h2 { margin-bottom: 0; }
+  .sheet-head .sn { margin-left: auto; font-size: 10.5px; color: var(--muted); }
+  .sbtn { padding: 3px 10px; font-size: 11px; border: 1px solid var(--baseline); border-radius: 3px; background: #fff; font-weight: 600; color: var(--navy); }
+  .sbtn:hover { background: #f0f2f6; }
+  .xls { width: 100%; border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .xls th, .xls td { border: 1px solid #d8d7cf; padding: 3px 8px; text-align: left; white-space: nowrap; }
+  .xls th { background: #eef1f6; color: var(--navy); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+  .xls th.num, .xls td.num { text-align: right; }
+  .xls tbody tr:hover td { background: #f4f6fa; }
+  .xls tr.tot td { font-weight: 700; background: #f6f5f1; }
+  .xls td.tr-MT { color: var(--navy); font-weight: 700; }
+  .xls td.tr-TT { color: var(--hand); font-weight: 700; }
+  .xls td.tr-EXP { color: var(--good); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -188,9 +204,9 @@
         <tr><td>10:00–20:00</td><td>13,000 ctn/h</td></tr>
       </table>
       <div class="note">Morning hours are backed by stock staged overnight; from 10:00 the cap is
-        the live constraint — picking rate + forklifts + sortation. Fixed numbers for now; the
-        per-day data feed to derive them comes later. A truck's cartons count against the hours
-        its loading actually spans.</div>
+        the live constraint — picking rate + forklifts + sortation. A truck's <b>whole load counts
+        against the hour it docks</b> — dock 07:15 with a 2.5 h load → all cartons in the 07:00
+        cap. Fixed numbers for now; the per-day data feed to derive them comes later.</div>
     </div>
 
     <div class="panel">
@@ -228,7 +244,7 @@
         <span class="move-hint" id="moveHint"></span>
         <button class="mb-btn" id="unassignBtn">Unassign</button>
       </div>
-      <div class="cap-title">Planned cartons per hour vs cap <b>(35k buffer-backed → 13k live)</b></div>
+      <div class="cap-title">Planned cartons per hour vs cap <b>(35k buffer-backed → 13k live)</b> · whole load counts in its docking hour</div>
       <div class="cap-strip" id="capStrip"></div>
       <div class="tl-head" id="tlHead"></div>
       <div class="tl" id="tl"></div>
@@ -241,6 +257,28 @@
         <span>one entrance: starts ≥ 4 min apart</span>
         <span style="margin-left:auto">docks open 07:00 · 06:00 – 20:00 · 16 docks</span>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-wrap">
+  <div class="panel" style="margin-bottom:0">
+    <div class="sheet-head">
+      <h2>Plan sheet <span class="soft">— Excel format · scheduled trucks by loading time</span></h2>
+      <span class="sn" id="sheetNote"></span>
+      <button class="sbtn" id="copySheet">Copy — paste into Excel</button>
+      <button class="sbtn" id="csvSheet">Download .csv</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="xls">
+        <thead><tr>
+          <th>Order</th><th>Customer</th><th>Trade</th><th>Truck</th>
+          <th>Queue time</th><th>Loading time</th><th>Cap hour</th>
+          <th class="num">Cartons</th><th class="num">Pallets</th>
+          <th class="num">Sortation ctn</th><th class="num">Weight (t)</th><th>Dock</th>
+        </tr></thead>
+        <tbody id="sheetBody"></tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -273,8 +311,10 @@ const EXPORT_DOCKS = 7;                            // D1–D7 = export-capable p
 const PALLET_CAP = { "4W": 3, "6W": 6, "10W": 12, "18W": 20, "18W-T": 26, "18W-EXP": 20, "22W": 32 };
 const EXIT_MIN = { "4W": 5, "6W": 5, "10W": 8, "18W": 12, "18W-T": 15, "18W-EXP": 12, "22W": 15 };
 const TYPE_MIX = ["4W","4W","4W","6W","6W","6W","10W","10W","10W","10W","18W","18W","18W","18W-T","18W-T","18W-EXP","18W-EXP","18W-EXP","22W","22W"];
-const CUSTOMERS = ["Northgate Trading", "Blue Lotus Mart", "Riverside Retail", "Golden Field Co.",
-  "Sunrise Wholesale", "Metro Grocer", "Harbor Foods", "Emerald Distribution"];
+/* trade channel: MT = modern trade (chains), TT = traditional trade (wholesale), EXP = export */
+const CUSTOMERS = [["Northgate Trading", "TT"], ["Blue Lotus Mart", "MT"], ["Riverside Retail", "MT"],
+  ["Golden Field Co.", "TT"], ["Sunrise Wholesale", "TT"], ["Metro Grocer", "MT"],
+  ["Harbor Foods", "MT"], ["Emerald Distribution", "TT"]];
 const pad = n => String(n).padStart(2, "0");
 const hhmm = m => pad(Math.floor(m / 60)) + ":" + pad(Math.round(m % 60));
 const fmtN = n => Math.round(n).toLocaleString("en-US");
@@ -337,13 +377,17 @@ function pullFromSap() {
   for (let i = 0; i < n; i++) {
     const type = TYPE_MIX[Math.floor(rnd() * TYPE_MIX.length)];
     const pallets = Math.max(1, Math.round(PALLET_CAP[type] * (0.6 + rnd() * 0.4)));
+    const [customer, trade] = CUSTOMERS[Math.floor(rnd() * CUSTOMERS.length)];
     orders.push({
       id: "SO-" + (so += 1 + Math.floor(rnd() * 9)),
-      customer: CUSTOMERS[Math.floor(rnd() * CUSTOMERS.length)],
+      customer,
+      trade: type === "18W-EXP" ? "EXP" : trade,
       truck_type: type,
       export: type === "18W-EXP",
       trailer: type === "18W-T",
+      pallets,
       carton_count: Math.round(pallets * (90 + rnd() * 30)),
+      kgCtn: +(4.5 + rnd() * 5).toFixed(1),   // case weight varies by SKU size
       sku_count: 1 + Math.floor(Math.pow(rnd(), 1.6) * 24),
       arrange_method: rnd() < 0.3 ? "hand" : "pallet",
       // truck confirmed available from (exports staged early; domestics spread over the morning)
@@ -356,16 +400,14 @@ function pullFromSap() {
 }
 
 // ---------- validation: the write-guard rule set ----------
+/* Cap attribution: the WHOLE load counts against the hour the truck docks — dock 07:00 with a
+   2.5 h load → all cartons hit the 07:00 cap. That's when the warehouse commits the stock. */
+const capBinOf = startMin => Math.min(N_CAP_HOURS - 1, Math.max(0, Math.floor((startMin - OPS_START) / 60)));
 function capBins(excludeId) {
   const bins = new Array(N_CAP_HOURS).fill(0);
   for (const p of placed) {
     if (excludeId && p.id === excludeId) continue;
-    const dur = p.finish - p.start;
-    for (let h = 0; h < N_CAP_HOURS; h++) {
-      const hs = OPS_START + h * 60, he = hs + 60;
-      const ov = Math.max(0, Math.min(p.finish, he) - Math.max(p.start, hs));
-      if (ov > 0) bins[h] += p.carton_count * ov / dur;
-    }
+    bins[capBinOf(p.start)] += p.carton_count;
   }
   return bins;
 }
@@ -392,18 +434,13 @@ function validatePlace(o, dockIdx, t, dur) {
       return { ok: false, reason: "one entrance — " + p.id + " already enters at " + hhmm(p.start) + " (needs ≥ " + ENTRY_GAP + " min gap)" };
   }
 
-  // hourly carton cap: this truck's cartons spread over its loading time
+  // hourly carton cap: the whole load counts against the docking hour
   const bins = capBins(o.id);
-  for (let h = 0; h < N_CAP_HOURS; h++) {
-    const hs = OPS_START + h * 60, he = hs + 60;
-    const ov = Math.max(0, Math.min(e, he) - Math.max(s, hs));
-    if (ov <= 0) continue;
-    const add = o.carton_count * ov / dur;
-    const cap = capOfHour(h);
-    if (bins[h] + add > cap)
-      return { ok: false, reason: hhmm(hs) + " cap " + fmtN(cap) + " ctn (" + capWhy(h) + ") — headroom " +
-               fmtN(cap - bins[h]) + ", this truck adds " + fmtN(add) + " in that hour" };
-  }
+  const h = capBinOf(s);
+  const cap = capOfHour(h);
+  if (bins[h] + o.carton_count > cap)
+    return { ok: false, reason: hhmm(OPS_START + h * 60) + " cap " + fmtN(cap) + " ctn (" + capWhy(h) + ") — headroom " +
+             fmtN(cap - bins[h]) + ", this truck docks in that hour with " + fmtN(o.carton_count) + " ctn" };
 
   return { ok: true, docks, exit, out };
 }
@@ -579,7 +616,83 @@ function render() {
     if (b.clientWidth < 52) b.querySelector(".mins")?.remove();
     if (b.clientWidth < 30) b.textContent = "";
   });
+
+  renderPlanSheet();
 }
+
+// ---------- plan sheet — Excel format under the board ----------
+const QUEUE_LEAD = 120, QUEUE_LEN = 60;    // queue window = loading − 2 h → loading − 1 h
+// loose/hand-arranged cartons run the sortation line; full-pallet loads bypass it by forklift
+const sortCtn = o => o.arrange_method === "hand" ? o.carton_count : 0;
+const SHEET_COLS = ["Order", "Customer", "Trade", "Truck", "Queue time", "Loading time", "Cap hour",
+                    "Cartons", "Pallets", "Sortation ctn", "Weight (t)", "Dock"];
+
+function sheetRows() {
+  return [...placed].sort((a, b) => a.start - b.start || a.id.localeCompare(b.id)).map(p => [
+    p.id, p.customer, p.trade, p.truck_type + (p.trailer ? " (2 docks)" : ""),
+    hhmm(p.start - QUEUE_LEAD) + "–" + hhmm(p.start - QUEUE_LEAD + QUEUE_LEN),
+    hhmm(p.start) + "–" + hhmm(p.finish),
+    hhmm(OPS_START + capBinOf(p.start) * 60),
+    p.carton_count, p.pallets, sortCtn(p), +(p.carton_count * p.kgCtn / 1000).toFixed(1),
+    p.docks.join("+"),
+  ]);
+}
+function sheetTotals(rows) {
+  const sum = i => rows.reduce((s, r) => s + r[i], 0);
+  return ["TOTAL — " + rows.length + " trucks", "", "", "", "", "", "",
+          sum(7), sum(8), sum(9), +sum(10).toFixed(1), ""];
+}
+
+function renderPlanSheet() {
+  const rows = sheetRows();
+  const un = orders.length - rows.length;
+  document.getElementById("sheetNote").textContent =
+    (un ? un + " truck" + (un > 1 ? "s" : "") + " still unscheduled — not on the sheet · " : "") +
+    "queue = loading − 2 h → − 1 h";
+  const body = document.getElementById("sheetBody");
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="12" style="color:var(--muted)">Nothing scheduled yet — pick hours in the queue and rows appear here.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(r =>
+    "<tr><td>" + r[0] + "</td><td>" + r[1] + '</td><td class="tr-' + r[2] + '">' + r[2] + "</td><td>" + r[3] +
+    "</td><td>" + r[4] + "</td><td>" + r[5] + "</td><td>" + r[6] +
+    '</td><td class="num">' + fmtN(r[7]) + '</td><td class="num">' + fmtN(r[8]) +
+    '</td><td class="num">' + fmtN(r[9]) + '</td><td class="num">' + r[10].toFixed(1) +
+    "</td><td>" + r[11] + "</td></tr>").join("") +
+    (() => { const t = sheetTotals(rows);
+      return '<tr class="tot"><td colspan="7">' + t[0] + '</td><td class="num">' + fmtN(t[7]) +
+        '</td><td class="num">' + fmtN(t[8]) + '</td><td class="num">' + fmtN(t[9]) +
+        '</td><td class="num">' + t[10].toFixed(1) + "</td><td></td></tr>"; })();
+}
+
+function sheetExport(sep) {
+  const rows = sheetRows();
+  const all = [SHEET_COLS, ...rows, sheetTotals(rows)];
+  const esc = sep === "," ? v => /[",\n]/.test(String(v)) ? '"' + String(v).replaceAll('"', '""') + '"' : v : v => v;
+  return all.map(r => r.map(esc).join(sep)).join("\r\n");
+}
+document.getElementById("copySheet").addEventListener("click", () => {
+  const tsv = sheetExport("\t");
+  const done = () => toast("✓ Plan sheet copied — paste straight into Excel");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(tsv).then(done).catch(() => { fallbackCopy(tsv); done(); });
+  } else { fallbackCopy(tsv); done(); }
+});
+function fallbackCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  document.execCommand("copy"); ta.remove();
+}
+document.getElementById("csvSheet").addEventListener("click", () => {
+  const blob = new Blob(["﻿" + sheetExport(",")], { type: "text/csv;charset=utf-8" });   // BOM so Excel opens UTF-8 right
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "dock-plan-" + document.getElementById("planDate").value + ".csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("✓ dock-plan-" + document.getElementById("planDate").value + ".csv downloaded");
+});
 
 // ---------- tooltip ----------
 const tip = document.getElementById("tip");
@@ -600,6 +713,7 @@ document.addEventListener("mousemove", e => {
     const p = placed.find(x => x.id === o.id);
     html = '<div class="t">' + o.id + " — " + o.truck_type + (o.export ? " · EXPORT" : "") + (o.trailer ? " · 2 docks" : "") + "</div>" +
       '<div class="r"><span>Customer</span><b>' + o.customer + "</b></div>" +
+      '<div class="r"><span>Trade / weight</span><b>' + o.trade + " · " + (o.carton_count * o.kgCtn / 1000).toFixed(1) + " t</b></div>" +
       '<div class="r"><span>Cartons / SKUs</span><b>' + fmtN(o.carton_count) + " / " + o.sku_count + "</b></div>" +
       '<div class="r"><span>Arrange method</span><b>' + o.arrange_method + "</b></div>" +
       '<div class="r"><span>Available from</span><b>' + hhmm(Math.max(o.arrival, OPS_START)) + "</b></div>" +
@@ -686,9 +800,9 @@ async function selftest() {
   const res = [];
   const T = (name, cond) => res.push((cond ? "✓ " : "✗ ") + name);
   let tid = 0;
-  const mk = over => Object.assign({ id: "SO-TEST" + (++tid), customer: "test",
-    truck_type: "10W", export: false, trailer: false, carton_count: 1400, sku_count: 8,
-    arrange_method: "pallet", arrival: OPS_START, _fixedDur: 55 }, over);
+  const mk = over => Object.assign({ id: "SO-TEST" + (++tid), customer: "test", trade: "MT",
+    truck_type: "10W", export: false, trailer: false, pallets: 12, carton_count: 1400, kgCtn: 6,
+    sku_count: 8, arrange_method: "pallet", arrival: OPS_START, _fixedDur: 55 }, over);
 
   T("export blocked on D10", !validatePlace(mk({ export: true, truck_type: "18W-EXP" }), 9, OPS_START, 55).ok);
   T("trailer blocked at D7 (needs D8–D16)", !validatePlace(mk({ trailer: true, truck_type: "18W-T" }), 6, OPS_START, 55).ok);
@@ -705,10 +819,17 @@ async function selftest() {
   T("second start shifted ≥ 4 min (one entrance)", Math.abs(domO.start - expO.start) >= ENTRY_GAP);
   T("overlap on same dock blocked", !validatePlace(mk(), DOCKS.indexOf(domO.docks[0]), domO.start + 10, 55).ok);
 
-  // cap: fill 14:00 to 12.9k of its 13k limit within the hour, then a same-hour add must be refused
+  // cap: fill the 14:00 docking hour to 12.9k of its 13k limit, then a same-hour add must be refused
   T("cap filler fits at 14:00", await placeAtHour(mk({ carton_count: 12900 }), 14));
   T("14:00 direct add over cap blocked", !validatePlace(mk(), 12, 14 * 60 + 10, 40).ok);
   T("same truck fine in a 35k morning hour", validatePlace(mk(), 12, OPS_START + 10, 40).ok);
+  T("whole load lands in its docking-hour bin", capBins(null)[capBinOf(14 * 60)] === 12900);
+
+  // plan sheet: every placed truck gets a row, queue window = loading − 2 h → − 1 h
+  const rows = sheetRows();
+  T("plan sheet lists every placed truck", rows.length === placed.length);
+  T("queue window is loading − 2 h → − 1 h", rows[0][4] === "05:00–06:00");
+  T("sheet cap hour matches docking hour", rows[rows.length - 1][6] === "14:00");
 
   const n0 = placed.length;
   unassign(domO);
