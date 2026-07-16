@@ -21,7 +21,7 @@ CARTONS_PER_PALLET = (100, 180)
 
 # Big trucks run denser pallets (more cartons, similar handling time): fixed
 # carton ranges per class instead of the per-pallet density above.
-DENSE_CTN = {"18W": (2400, 3200), "18W-T": (2400, 3600), "18W-EXP": (4500, 5300)}
+DENSE_CTN = {"18W": (2400, 3200), "18W-T": (2400, 3600), "18W-EXP": (2500, 4500)}
 
 
 def make_synthetic(n: int = N_EVENTS, seed: int = SEED) -> pd.DataFrame:

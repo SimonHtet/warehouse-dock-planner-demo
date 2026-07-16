@@ -378,7 +378,7 @@ function pullFromSap() {
     const type = TYPE_MIX[Math.floor(rnd() * TYPE_MIX.length)];
     const pallets = Math.max(1, Math.round(PALLET_CAP[type] * (0.6 + rnd() * 0.4)));
     // big trucks run denser pallets — fixed carton ranges (must match DENSE_CTN in src/synth.py)
-    const dense = { "18W": [2400, 3200], "18W-T": [2400, 3600], "18W-EXP": [4500, 5300] }[type];
+    const dense = { "18W": [2400, 3200], "18W-T": [2400, 3600], "18W-EXP": [2500, 4500] }[type];
     const [customer, trade] = CUSTOMERS[Math.floor(rnd() * CUSTOMERS.length)];
     orders.push({
       id: "SO-" + (so += 1 + Math.floor(rnd() * 9)),
